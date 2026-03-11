@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core palette - Dark theme (default for dashboard/auth) */
+    --background: 240 6% 4%;
+    --foreground: 240 5% 94%;
+
+    --card: 240 6% 7%;
+    --card-foreground: 240 5% 94%;
+
+    --popover: 240 6% 7%;
+    --popover-foreground: 240 5% 94%;
+
+    --primary: 248 85% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 11%;
+    --secondary-foreground: 240 5% 94%;
+
+    --muted: 240 5% 14%;
+    --muted-foreground: 240 4% 47%;
+
+    --accent: 248 85% 65%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 63%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 5% 18%;
+    --input: 240 5% 18%;
+    --ring: 248 85% 65%;
+
+    --radius: 0.625rem;
+
+    /* Extended palette */
+    --surface: 240 6% 7%;
+    --surface-2: 240 5% 10%;
+    --surface-3: 240 4% 14%;
+    --border-light: 240 4% 25%;
+
+    --accent-dim: 248 85% 65% / 0.12;
+    --accent-glow: 248 85% 65% / 0.25;
+
+    --success: 160 84% 52%;
+    --success-dim: 160 84% 52% / 0.1;
+    --success-border: 160 84% 52% / 0.25;
+
+    --warning: 38 92% 50%;
+    --warning-dim: 38 92% 50% / 0.1;
+
+    --info: 217 91% 70%;
+    --info-dim: 217 91% 70% / 0.1;
+
+    --sidebar-background: 240 6% 7%;
+    --sidebar-foreground: 240 5% 94%;
+    --sidebar-primary: 248 85% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 10%;
+    --sidebar-accent-foreground: 240 5% 94%;
+    --sidebar-border: 240 5% 18%;
+    --sidebar-ring: 248 85% 65%;
+  }
+
+  /* Light theme variant for client portal / landing */
+  .theme-light {
+    --background: 40 20% 97%;
+    --foreground: 60 7% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 60 7% 9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 60 7% 9%;
+
+    --primary: 248 78% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 8% 95%;
+    --secondary-foreground: 60 7% 9%;
+
+    --muted: 40 8% 95%;
+    --muted-foreground: 50 5% 38%;
+
+    --accent: 248 78% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 37 12% 90%;
+    --input: 37 12% 90%;
+    --ring: 248 78% 60%;
+
+    --surface: 0 0% 100%;
+    --surface-2: 40 8% 95%;
+    --surface-3: 37 12% 90%;
+    --border-light: 37 10% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Instrument Serif', serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Instrument Serif', serif;
+  }
+  .font-body {
+    font-family: 'DM Sans', sans-serif;
+  }
+  .font-landing {
+    font-family: 'Playfair Display', serif;
+  }
+}
