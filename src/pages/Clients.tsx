@@ -364,13 +364,13 @@ export default function Clients() {
   return (
     <div className="min-h-screen bg-background">
       {/* HEADER */}
-      <header className="bg-surface border-b border-border sticky top-0 z-50 px-6">
-        <div className="max-w-[960px] mx-auto h-[60px] flex items-center justify-between">
+      <header className="bg-surface border-b border-border sticky top-0 z-50 px-4 sm:px-6">
+        <div className="max-w-[960px] mx-auto h-[60px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-primary rounded-[9px] flex items-center justify-center text-[15px] text-primary-foreground shadow-[0_4px_12px_hsl(var(--accent-glow))]">⚡</div>
             <span className="font-display text-xl text-foreground">Handoff</span>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3 sm:gap-5 flex-wrap justify-end text-xs">
             <span className="text-xs text-muted-foreground font-medium">Clients</span>
             <a href="/#pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body">Pricing</a>
             <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body">
@@ -380,9 +380,15 @@ export default function Clients() {
         </div>
       </header>
 
-      <div className="max-w-[960px] mx-auto px-6 py-8">
+      <div className="max-w-[960px] mx-auto px-4 sm:px-6 py-8">
          {/* PLAN BADGE */}
-         <div className={plan === "free" ? "bg-warning/10 border border-warning/20 rounded-xl p-4 mb-6 flex items-center justify-between" : "bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6 flex items-center justify-between"}>
+        <div
+          className={
+            plan === "free"
+              ? "bg-warning/10 border border-warning/20 rounded-xl p-4 mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+              : "bg-primary/5 border border-primary/20 rounded-xl p-4 mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          }
+        >
            <div className="text-sm text-foreground">
              {plan === "free" ? (
                <>
@@ -398,7 +404,7 @@ export default function Clients() {
          </div>
 
         {/* STATS */}
-        <div className="grid grid-cols-3 gap-3.5 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mb-8">
           {[
             { label: "Total Clients", value: totalClients, icon: "👥" },
             { label: "Avg. Completion", value: `${avgCompletion}%`, icon: "◷" },
@@ -415,7 +421,7 @@ export default function Clients() {
         </div>
 
         {/* HEADER ROW */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <h1 className="font-display text-[26px] text-foreground">Your Clients</h1>
           <div className="flex items-center gap-2">
             <button
@@ -517,7 +523,7 @@ export default function Clients() {
 
         {/* SEARCH & FILTERS */}
         <div className="flex flex-col gap-3 mb-5">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -544,7 +550,7 @@ export default function Clients() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {STATUS_FILTERS.map(f => (
               <button
                 key={f.key}
@@ -601,7 +607,7 @@ export default function Clients() {
                   className={`bg-surface border border-border rounded-[14px] p-5 hover:border-muted-foreground/20 transition-all cursor-pointer ${isArchived ? "opacity-60" : ""}`}
                   onClick={() => setSelectedClient(client)}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0"
                       style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
@@ -629,7 +635,7 @@ export default function Clients() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 justify-end">
                       <div className="flex items-center gap-2 min-w-[100px]">
                         <div className="flex-1 h-[5px] bg-surface-3 rounded-full overflow-hidden">
                           <div
