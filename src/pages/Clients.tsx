@@ -82,85 +82,103 @@ export default function Clients() {
   const fetchClients = useCallback(async () => {
     if (!user) return;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("plan")
-      .eq("user_id", user.id)
-      .single();
-    if (profile) setPlan(profile.plan || "free");
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("plan")
+        .eq("user_id", user.id)
+        .single();
 
-    const { data: templatesData } = await supabase
-      .from("checklist_templates")
-      .select("id, name")
-      .order("created_at", { ascending: false });
+      if (profileError && profileError.code !== "PGRST116") {
+        // PGRST116 = row not found; fall back to free
+        throw profileError;
+      }
 
-    setTemplateCount(templatesData?.length || 0);
+      if (profile) setPlan(profile.plan || "free");
 
-    const { data: itemsData } = templatesData && templatesData.length > 0
-      ? await supabase.from("checklist_items").select("template_id")
-      : { data: [] };
+      const { data: templatesData, error: templatesError } = await supabase
+        .from("checklist_templates")
+        .select("id, name")
+        .order("created_at", { ascending: false });
 
-    const { data: clientsAllData } = await supabase
-      .from("clients")
-      .select("template_id");
+      if (templatesError) throw templatesError;
 
-    const itemCountMap = new Map<string, number>();
-    (itemsData || []).forEach(i =>
-      itemCountMap.set(i.template_id, (itemCountMap.get(i.template_id) || 0) + 1)
-    );
+      setTemplateCount(templatesData?.length || 0);
 
-    const usageMap = new Map<string, number>();
-    (clientsAllData || []).forEach(c => {
-      if (c.template_id) usageMap.set(c.template_id, (usageMap.get(c.template_id) || 0) + 1);
-    });
+      const { data: itemsData } = templatesData && templatesData.length > 0
+        ? await supabase.from("checklist_items").select("template_id")
+        : { data: [] };
 
-    setTemplates((templatesData || []).map(t => ({
-      id: t.id,
-      name: t.name,
-      itemCount: itemCountMap.get(t.id) || 0,
-      usedByClients: usageMap.get(t.id) || 0,
-    })));
+      const { data: clientsAllData, error: clientsAllError } = await supabase
+        .from("clients")
+        .select("template_id");
 
-    const { data: clientsData } = await supabase
-      .from("clients")
-      .select("*")
-      .order("created_at", { ascending: false });
+      if (clientsAllError) throw clientsAllError;
 
-    if (!clientsData || clientsData.length === 0) {
-      setClients([]);
+      const itemCountMap = new Map<string, number>();
+      (itemsData || []).forEach(i =>
+        itemCountMap.set(i.template_id, (itemCountMap.get(i.template_id) || 0) + 1)
+      );
+
+      const usageMap = new Map<string, number>();
+      (clientsAllData || []).forEach(c => {
+        if (c.template_id) usageMap.set(c.template_id, (usageMap.get(c.template_id) || 0) + 1);
+      });
+
+      setTemplates((templatesData || []).map(t => ({
+        id: t.id,
+        name: t.name,
+        itemCount: itemCountMap.get(t.id) || 0,
+        usedByClients: usageMap.get(t.id) || 0,
+      })));
+
+      const { data: clientsData, error: clientsError } = await supabase
+        .from("clients")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (clientsError) throw clientsError;
+
+      if (!clientsData || clientsData.length === 0) {
+        setClients([]);
+        setLoading(false);
+        return;
+      }
+
+      const templateIds = [...new Set(clientsData.filter(c => c.template_id).map(c => c.template_id!))];
+      const { data: templatesForClients } = templateIds.length > 0
+        ? await supabase.from("checklist_templates").select("id, name").in("id", templateIds)
+        : { data: [] };
+
+      const { data: items } = templateIds.length > 0
+        ? await supabase.from("checklist_items").select("id, template_id").in("template_id", templateIds)
+        : { data: [] };
+
+      const clientIds = clientsData.map(c => c.id);
+      const { data: responses } = await supabase
+        .from("client_responses")
+        .select("client_id, completed")
+        .in("client_id", clientIds);
+
+      const templateMap = new Map((templatesForClients || []).map(t => [t.id, t.name]));
+      const itemCountMapClients = new Map<string, number>();
+      (items || []).forEach(i => itemCountMapClients.set(i.template_id, (itemCountMapClients.get(i.template_id) || 0) + 1));
+      const completedMap = new Map<string, number>();
+      (responses || []).filter(r => r.completed).forEach(r => completedMap.set(r.client_id, (completedMap.get(r.client_id) || 0) + 1));
+
+      setClients(clientsData.map(c => ({
+        ...c,
+        status: c.status || "in_progress",
+        templateName: c.template_id ? templateMap.get(c.template_id) || "Unknown" : undefined,
+        totalItems: c.template_id ? itemCountMapClients.get(c.template_id) || 0 : 0,
+        completedItems: completedMap.get(c.id) || 0,
+      })));
       setLoading(false);
-      return;
+    } catch (err) {
+      console.error("Failed to load clients", err);
+      toast.error("Failed to load clients. Please refresh.");
+      setLoading(false);
     }
-
-    const templateIds = [...new Set(clientsData.filter(c => c.template_id).map(c => c.template_id!))];
-    const { data: templatesForClients } = templateIds.length > 0
-      ? await supabase.from("checklist_templates").select("id, name").in("id", templateIds)
-      : { data: [] };
-
-    const { data: items } = templateIds.length > 0
-      ? await supabase.from("checklist_items").select("id, template_id").in("template_id", templateIds)
-      : { data: [] };
-
-    const clientIds = clientsData.map(c => c.id);
-    const { data: responses } = await supabase
-      .from("client_responses")
-      .select("client_id, completed")
-      .in("client_id", clientIds);
-
-    const templateMap = new Map((templatesForClients || []).map(t => [t.id, t.name]));
-    const itemCountMapClients = new Map<string, number>();
-    (items || []).forEach(i => itemCountMapClients.set(i.template_id, (itemCountMapClients.get(i.template_id) || 0) + 1));
-    const completedMap = new Map<string, number>();
-    (responses || []).filter(r => r.completed).forEach(r => completedMap.set(r.client_id, (completedMap.get(r.client_id) || 0) + 1));
-
-    setClients(clientsData.map(c => ({
-      ...c,
-      status: c.status || "in_progress",
-      templateName: c.template_id ? templateMap.get(c.template_id) || "Unknown" : undefined,
-      totalItems: c.template_id ? itemCountMapClients.get(c.template_id) || 0 : 0,
-      completedItems: completedMap.get(c.id) || 0,
-    })));
-    setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
@@ -173,10 +191,23 @@ export default function Clients() {
   const canCreateTemplate = templateCount < limits.templates;
 
   const copyLink = (token: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/onboarding/${token}`);
-    setCopied(token);
-    toast.success("Magic link copied!");
-    setTimeout(() => setCopied(null), 2000);
+    const url = `${window.location.origin}/onboarding/${token}`;
+
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      toast.error("Clipboard access is not available. Please copy the link manually.");
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setCopied(token);
+        toast.success("Magic link copied!");
+        setTimeout(() => setCopied(null), 2000);
+      })
+      .catch(() => {
+        toast.error("Could not copy link. Please copy it manually.");
+      });
   };
 
   const handleDelete = async () => {
@@ -428,6 +459,7 @@ export default function Clients() {
               onClick={handleExportAllCsv}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium bg-surface-2 border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/30 transition-all"
               title="Export all clients as CSV"
+              aria-label="Export all clients as CSV"
             >
               <FileDown size={14} />
             </button>
@@ -503,12 +535,14 @@ export default function Clients() {
                           disabled={duplicating === template.id}
                           className="px-2 py-1.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/30 transition-all disabled:opacity-50"
                           title="Duplicate"
+                          aria-label={`Duplicate template ${template.name}`}
                         >
                           <Copy size={12} />
                         </button>
                         <button
                           onClick={() => setDeleteTemplate(template)}
                           className="px-2 py-1.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all"
+                          aria-label={`Delete template ${template.name}`}
                         >
                           🗑
                         </button>
@@ -653,6 +687,7 @@ export default function Clients() {
                             ? "bg-success/10 border-success/30 text-success"
                             : "border-border text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                         }`}
+                        aria-label={`Copy onboarding link for ${client.name}`}
                       >
                         {copied === client.token ? "✓ Copied" : "Copy Link"}
                       </button>
@@ -662,12 +697,14 @@ export default function Clients() {
                           isArchived ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"
                         }`}
                         title={isArchived ? "Restore" : "Archive"}
+                        aria-label={isArchived ? `Restore client ${client.name}` : `Archive client ${client.name}`}
                       >
                         <Archive size={12} />
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); setDeleteTarget(client); }}
                         className="px-2.5 py-1.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 transition-all"
+                        aria-label={`Delete client ${client.name}`}
                       >
                         🗑
                       </button>

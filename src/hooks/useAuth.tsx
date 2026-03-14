@@ -37,18 +37,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth`,
       },
     });
+
     if (error) return { error };
+
     if (data.user) {
-      await supabase.from("profiles").update({ full_name: fullName }).eq("user_id", data.user.id);
+      // Ensure a profile row always exists for plan & metadata updates
+      await supabase
+        .from("profiles")
+        .upsert({ user_id: data.user.id, full_name: fullName }, { onConflict: "user_id" });
     }
+
     return { error: null };
   };
 

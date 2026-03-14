@@ -28,6 +28,7 @@ export default function Onboard() {
   const [responses, setResponses] = useState<ResponseMap>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [noTemplate, setNoTemplate] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -42,8 +43,14 @@ export default function Onboard() {
       .eq("token", token!)
       .maybeSingle();
 
-    if (!client || !client.template_id) {
+    if (!client) {
       setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
+    if (!client.template_id) {
+      setNoTemplate(true);
       setLoading(false);
       return;
     }
@@ -101,6 +108,13 @@ export default function Onboard() {
   }, [clientId]);
 
   const handleFileUpload = async (itemId: string, file: File) => {
+    // Basic validation to prevent huge or unsupported uploads
+    const maxSizeMb = 10;
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      toast.error(`File is too large. Max size is ${maxSizeMb}MB.`);
+      return;
+    }
+
     setUploading(itemId);
     const path = `${clientId}/${itemId}/${file.name}`;
     const { error } = await supabase.storage.from("client-uploads").upload(path, file, { upsert: true });
@@ -125,6 +139,20 @@ export default function Onboard() {
     return (
       <div className="theme-light min-h-screen bg-background flex items-center justify-center">
         <div className="text-muted-foreground text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  if (noTemplate) {
+    return (
+      <div className="theme-light min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-[48px] mb-4">📋</div>
+          <h2 className="font-display text-2xl text-foreground mb-2">Checklist not ready yet</h2>
+          <p className="text-sm text-muted-foreground">
+            This onboarding link is valid, but your checklist has not been set up yet. Please contact your designer.
+          </p>
+        </div>
       </div>
     );
   }
