@@ -32,79 +32,138 @@ export default function Onboard() {
   const [saving, setSaving] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (token) loadData();
-  }, [token]);
-
-  const loadData = async () => {
-    const { data: client } = await supabase
-      .from("clients")
-      .select("id, name, template_id")
-      .eq("token", token!)
-      .maybeSingle();
-
-    if (!client) {
+  const loadData = useCallback(async () => {
+    const t = token?.trim();
+    if (!t) {
       setNotFound(true);
       setLoading(false);
       return;
     }
 
-    if (!client.template_id) {
-      setNoTemplate(true);
+    try {
+      const { data: client, error: clientError } = await supabase
+        .from("clients")
+        .select("id, name, template_id")
+        .eq("token", t)
+        .maybeSingle();
+
+      if (clientError) {
+        console.error("Failed to load client", clientError);
+        toast.error("Could not load onboarding. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (!client) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      if (!client.template_id) {
+        setNoTemplate(true);
+        setLoading(false);
+        return;
+      }
+
+      setClientName(client.name);
+      setClientId(client.id);
+
+      const { data: itemsData, error: itemsError } = await supabase
+        .from("checklist_items")
+        .select("*")
+        .eq("template_id", client.template_id)
+        .order("position");
+
+      if (itemsError) {
+        console.error("Failed to load checklist items", itemsError);
+        toast.error("Could not load checklist. Please try again.");
+      }
+      setItems(itemsData ?? []);
+
+      const { data: responsesData, error: responsesError } = await supabase
+        .from("client_responses")
+        .select("item_id, value, file_url, completed")
+        .eq("client_id", client.id);
+
+      if (responsesError) {
+        console.error("Failed to load responses", responsesError);
+      }
+      const rMap: ResponseMap = {};
+      (responsesData ?? []).forEach(r => {
+        rMap[r.item_id] = { value: r.value ?? "", file_url: r.file_url ?? "", completed: r.completed };
+      });
+      setResponses(rMap);
+    } catch (err) {
+      console.error("Onboard loadData error", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
+  }, [token]);
 
-    setClientName(client.name);
-    setClientId(client.id);
-
-    const { data: itemsData } = await supabase
-      .from("checklist_items")
-      .select("*")
-      .eq("template_id", client.template_id)
-      .order("position");
-
-    setItems(itemsData || []);
-
-    const { data: responsesData } = await supabase
-      .from("client_responses")
-      .select("item_id, value, file_url, completed")
-      .eq("client_id", client.id);
-
-    const rMap: ResponseMap = {};
-    (responsesData || []).forEach(r => {
-      rMap[r.item_id] = { value: r.value || "", file_url: r.file_url || "", completed: r.completed };
-    });
-    setResponses(rMap);
-    setLoading(false);
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const saveResponse = useCallback(async (itemId: string, value: string, fileUrl?: string, isCheckbox?: boolean) => {
+    if (!clientId) return;
+
     setSaving(itemId);
     const completed = isCheckbox ? value === "true" : (value.trim().length > 0 || (fileUrl || "").length > 0);
 
-    const { error } = await supabase
-      .from("client_responses")
-      .upsert(
-        {
-          client_id: clientId,
-          item_id: itemId,
-          value: value || null,
-          file_url: fileUrl || null,
-          completed,
-        },
-        { onConflict: "client_id,item_id" }
-      );
+    try {
+      // Manually emulate an upsert without requiring a composite unique constraint
+      const { data: existing, error: fetchError } = await supabase
+        .from("client_responses")
+        .select("id")
+        .eq("client_id", clientId)
+        .eq("item_id", itemId)
+        .maybeSingle();
 
-    if (error) {
-      toast.error("Failed to save");
-    } else {
+      if (fetchError && fetchError.code !== "PGRST116") {
+        throw fetchError;
+      }
+
+      let mutationError = null;
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("client_responses")
+          .update({
+            value: value || null,
+            file_url: fileUrl || null,
+            completed,
+          })
+          .eq("id", existing.id);
+        mutationError = error;
+      } else {
+        const { error } = await supabase
+          .from("client_responses")
+          .insert({
+            client_id: clientId,
+            item_id: itemId,
+            value: value || null,
+            file_url: fileUrl || null,
+            completed,
+          });
+        mutationError = error;
+      }
+
+      if (mutationError) {
+        throw mutationError;
+      }
+
       setResponses(prev => ({
         ...prev,
         [itemId]: { value, file_url: fileUrl || prev[itemId]?.file_url || "", completed },
       }));
+    } catch (err) {
+      console.error("Failed to save response", err);
+      toast.error("Failed to save. Please try again.");
+    } finally {
+      setSaving(null);
     }
-    setSaving(null);
   }, [clientId]);
 
   const handleFileUpload = async (itemId: string, file: File) => {
