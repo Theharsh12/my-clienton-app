@@ -66,42 +66,43 @@ export default function Landing() {
     });
   }, [user]);
 
-  const handlePlanClick = async (planName: string) => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    if (planName === "Free") {
-      setUpgrading(planName);
-      const { error } = await supabase.
-      from("profiles").
-      update({ plan: "free" }).
-      eq("user_id", user.id);
-      setUpgrading(null);
-      if (error) {
-        toast.error("Failed to switch plan. Please try again.");
-      } else {
-        toast.success("Switched to Free plan!");
-        setCurrentPlan("free");
-        navigate("/clients");
-      }
-      return;
-    }
-    // Upgrade to Pro or Lifetime
-    const planKey = planName === "Founding Lifetime" ? "lifetime" : "pro";
-    setUpgrading(planName);
-    const { error } = await supabase.
-    from("profiles").
-    update({ plan: planKey }).
-    eq("user_id", user.id);
+  const handlePlanClick = async (plan: string) => {
+  if (plan === "Free") {
+    setUpgrading(plan);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        { user_id: user.id, plan: "free" },
+        { onConflict: "user_id" }
+      );
     setUpgrading(null);
     if (error) {
-      toast.error("Failed to upgrade. Please try again.");
+      toast.error("Failed to switch plan. Please try again.");
     } else {
-      toast.success(`Upgraded to ${planName}!`);
-      setCurrentPlan(planKey);
+      toast.success("Switched to Free plan!");
+      setCurrentPlan("free");
       navigate("/clients");
     }
+    return;
+  }
+  const planKey = plan === "Founding Lifetime" ? "lifetime" : "pro";
+  setUpgrading(plan);
+
+const { error } = await supabase
+  .from("profiles")
+  .upsert(
+    { user_id: user.id, plan: planKey },
+    { onConflict: "user_id" }          // row hai toh update, nahi hai toh insert
+  );
+
+setUpgrading(null);
+if (error) {
+  toast.error("Failed to upgrade. Please try again.");
+} else {
+  toast.success(`Upgraded to ${plan}!`);
+  setCurrentPlan(planKey);
+  navigate("/clients");
+}
   };
 
   return (

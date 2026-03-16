@@ -106,87 +106,101 @@ export default function Onboard() {
     loadData();
   }, [loadData]);
 
-  const saveResponse = useCallback(async (itemId: string, value: string, fileUrl?: string, isCheckbox?: boolean) => {
-    if (!clientId) return;
+  const saveResponse = useCallback(
+    async (itemId: string, value: string, fileUrl?: string, isCheckbox?: boolean) => {
+      if (!clientId) return;
 
-    setSaving(itemId);
-    const completed = isCheckbox ? value === "true" : (value.trim().length > 0 || (fileUrl || "").length > 0);
+      setSaving(itemId);
+      const completed = isCheckbox
+        ? value === "true"
+        : value.trim().length > 0 || (fileUrl || "").length > 0;
 
-    try {
-      // Manually emulate an upsert without requiring a composite unique constraint
-      const { data: existing, error: fetchError } = await supabase
-        .from("client_responses")
-        .select("id")
-        .eq("client_id", clientId)
-        .eq("item_id", itemId)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== "PGRST116") {
-        throw fetchError;
-      }
-
-      let mutationError = null;
-
-      if (existing?.id) {
+      try {
         const { error } = await supabase
           .from("client_responses")
-          .update({
-            value: value || null,
-            file_url: fileUrl || null,
-            completed,
-          })
-          .eq("id", existing.id);
-        mutationError = error;
-      } else {
-        const { error } = await supabase
-          .from("client_responses")
-          .insert({
-            client_id: clientId,
-            item_id: itemId,
-            value: value || null,
-            file_url: fileUrl || null,
-            completed,
-          });
-        mutationError = error;
-      }
+          .upsert(
+            {
+              client_id: clientId,
+              item_id: itemId,
+              value: value || null,
+              file_url: fileUrl || null,
+              completed,
+            },
+            {
+              onConflict: "client_id,item_id",
+            }
+          );
 
-      if (mutationError) {
-        throw mutationError;
-      }
+        if (error) {
+          console.error("Save error:", error);
+          toast.error("Failed to save. Please try again.");
+          return;
+        }
 
-      setResponses(prev => ({
-        ...prev,
-        [itemId]: { value, file_url: fileUrl || prev[itemId]?.file_url || "", completed },
-      }));
-    } catch (err) {
-      console.error("Failed to save response", err);
-      toast.error("Failed to save. Please try again.");
-    } finally {
-      setSaving(null);
-    }
-  }, [clientId]);
+        setResponses(prev => ({
+          ...prev,
+          [itemId]: {
+            value,
+            file_url: fileUrl || prev[itemId]?.file_url || "",
+            completed,
+          },
+        }));
+      } catch (mutationError) {
+        console.error("Save error:", mutationError);
+        toast.error("Failed to save. Please try again.");
+      } finally {
+        setSaving(null);
+      }
+    },
+    [clientId]
+  );
 
   const handleFileUpload = async (itemId: string, file: File) => {
-    // Basic validation to prevent huge or unsupported uploads
+    // 1. Pehle check karein ki file sahi mein aayi hai ya nahi
+    if (!file || !(file instanceof File)) {
+      console.error("Invalid file object received");
+      return;
+    }
+  
     const maxSizeMb = 10;
     if (file.size > maxSizeMb * 1024 * 1024) {
       toast.error(`File is too large. Max size is ${maxSizeMb}MB.`);
       return;
     }
-
+  
     setUploading(itemId);
-    const path = `${clientId}/${itemId}/${file.name}`;
-    const { error } = await supabase.storage.from("client-uploads").upload(path, file, { upsert: true });
-
-    if (error) {
-      toast.error("Upload failed");
+    const bucket = import.meta.env.VITE_SUPABASE_UPLOAD_BUCKET || "client-uploads";
+  
+    // Name Sanitization (Aapka logic sahi hai)
+    const safeName = (file.name || "upload")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "_")
+      .replace(/_+/g, "_");
+  
+    const uploadId = crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11);
+    const path = `${clientId}/${itemId}/${uploadId}/${safeName}`;
+  
+    try {
+      const { error } = await supabase.storage.from(bucket).upload(path, file, {
+        upsert: true,
+        contentType: file.type || "application/octet-stream",
+      });
+  
+      if (error) throw error;
+  
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
+      
+      // Yahan check karein saveResponse sahi se define hai ya nahi
+      await saveResponse(itemId, safeName, urlData.publicUrl);
+      toast.success("File uploaded successfully!");
+      
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Upload failed");
+    } finally {
       setUploading(null);
-      return;
     }
-
-    const { data: urlData } = supabase.storage.from("client-uploads").getPublicUrl(path);
-    await saveResponse(itemId, file.name, urlData.publicUrl);
-    setUploading(null);
   };
 
   const handleCheckboxToggle = (itemId: string) => {
