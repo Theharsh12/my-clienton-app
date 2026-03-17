@@ -29,7 +29,7 @@ const PLANS = [
 },
 {
   name: "Pro",
-  price: "$19",
+  price: "$9",
   period: "/month",
   features: ["Unlimited clients", "Unlimited templates", "File uploads", "Completion tracking", "Remove branding"],
   cta: "Go Pro",
@@ -66,43 +66,42 @@ export default function Landing() {
     });
   }, [user]);
 
-  const handlePlanClick = async (plan: string) => {
-  if (plan === "Free") {
-    setUpgrading(plan);
-    const { error } = await supabase
-      .from("profiles")
-      .upsert(
-        { user_id: user.id, plan: "free" },
-        { onConflict: "user_id" }
-      );
+  const handlePlanClick = async (planName: string) => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (planName === "Free") {
+      setUpgrading(planName);
+      const { error } = await supabase.
+      from("profiles").
+      update({ plan: "free" }).
+      eq("user_id", user.id);
+      setUpgrading(null);
+      if (error) {
+        toast.error("Failed to switch plan. Please try again.");
+      } else {
+        toast.success("Switched to Free plan!");
+        setCurrentPlan("free");
+        navigate("/clients");
+      }
+      return;
+    }
+    // Upgrade to Pro or Lifetime
+    const planKey = planName === "Founding Lifetime" ? "lifetime" : "pro";
+    setUpgrading(planName);
+    const { error } = await supabase.
+    from("profiles").
+    update({ plan: planKey }).
+    eq("user_id", user.id);
     setUpgrading(null);
     if (error) {
-      toast.error("Failed to switch plan. Please try again.");
+      toast.error("Failed to upgrade. Please try again.");
     } else {
-      toast.success("Switched to Free plan!");
-      setCurrentPlan("free");
+      toast.success(`Upgraded to ${planName}!`);
+      setCurrentPlan(planKey);
       navigate("/clients");
     }
-    return;
-  }
-  const planKey = plan === "Founding Lifetime" ? "lifetime" : "pro";
-  setUpgrading(plan);
-
-const { error } = await supabase
-  .from("profiles")
-  .upsert(
-    { user_id: user.id, plan: planKey },
-    { onConflict: "user_id" }          // row hai toh update, nahi hai toh insert
-  );
-
-setUpgrading(null);
-if (error) {
-  toast.error("Failed to upgrade. Please try again.");
-} else {
-  toast.success(`Upgraded to ${plan}!`);
-  setCurrentPlan(planKey);
-  navigate("/clients");
-}
   };
 
   return (

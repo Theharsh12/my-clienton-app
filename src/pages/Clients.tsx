@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate } from "react-router-dom";
+import { Navigate , Link , useNavigate} from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ArrowUpDown, FileDown, Archive, Copy, Pencil, ChevronUp, ChevronDown } from "lucide-react";
@@ -53,6 +53,7 @@ type SortKey = "name" | "created_at" | "completion";
 type StatusFilter = "all" | "in_progress" | "completed" | "archived";
 
 export default function Clients() {
+  const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -202,7 +203,7 @@ export default function Clients() {
       .writeText(url)
       .then(() => {
         setCopied(token);
-        toast.success("Magic link copied!");
+        toast.success("Link copied! Send it to your client to get started.");
         setTimeout(() => setCopied(null), 2000);
       })
       .catch(() => {
@@ -402,11 +403,31 @@ export default function Clients() {
             <span className="font-display text-xl text-foreground">Handoff</span>
           </div>
           <div className="flex items-center gap-3 sm:gap-5 flex-wrap justify-end text-xs">
-            <span className="text-xs text-muted-foreground font-medium">Clients</span>
-            <a href="/#pricing" className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body">Pricing</a>
-            <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body">
-              Sign out
-            </button>
+    <div className="hidden sm:flex items-center gap-2">
+    <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-[11px] font-bold text-primary-foreground">
+      {(user.user_metadata?.full_name || user.email)?.[0].toUpperCase()}
+    </div>
+    <span className="text-xs text-muted-foreground">
+  Welcome, {user.user_metadata?.full_name || user.email} 👋
+</span>
+  </div>
+  <span className="text-xs text-muted-foreground font-medium">Clients</span>
+  {plan === "free" && (
+    <button
+      onClick={() => {
+        navigate("/");
+        setTimeout(() => {
+          document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+        }, 500);
+      }}
+      className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body"
+    >
+      Pricing
+    </button>
+  )}
+  <button onClick={signOut} className="text-xs text-muted-foreground hover:text-foreground transition-colors font-body">
+    Sign out
+  </button>
           </div>
         </div>
       </header>
@@ -431,7 +452,20 @@ export default function Clients() {
                </>
              )}
            </div>
-           <a href="/#pricing" className="text-xs font-semibold text-primary hover:underline">Upgrade →</a>
+           
+ {plan === "free" && (
+  <button
+    onClick={() => {
+      navigate("/");
+      setTimeout(() => {
+        document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    }}
+    className="text-xs font-semibold text-primary hover:underline"
+  >
+    Upgrade →
+  </button>
+)}
          </div>
 
         {/* STATS */}
