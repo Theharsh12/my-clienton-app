@@ -23,7 +23,7 @@ const PLANS = [
   name: "Free",
   price: "$0",
   period: "forever",
-  features: ["2 active clients", "1 template", "Handoff branding"],
+  features: ["2 active clients", "1 template", "Onboardly branding"],
   cta: "Start Free",
   highlight: false
 },
@@ -110,7 +110,7 @@ export default function Landing() {
       <nav className={`fixed top-0 inset-x-0 z-50 px-6 md:px-10 h-16 flex items-center justify-between transition-all ${scrolled ? "bg-background/94 backdrop-blur-xl border-b border-border" : ""}`}>
         <div className="flex items-center gap-2.5 font-landing text-xl text-foreground">
           <div className="w-8 h-8 bg-foreground rounded-[9px] flex items-center justify-center text-sm text-background">⚡</div>
-          Handoff
+          Onboardly
         </div>
         <div className="hidden md:flex items-center gap-8">
           {[["Features", "#features"], ["Pricing", "#pricing"], ["Testimonials", "#testimonials"]].map(([l, href]) =>
@@ -165,7 +165,7 @@ export default function Landing() {
               <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
               <div className="w-2.5 h-2.5 rounded-full bg-warning" />
               <div className="w-2.5 h-2.5 rounded-full bg-success" />
-              <div className="flex-1 text-center text-[11.5px] text-muted-foreground">handoff.app/onboarding/abc123</div>
+              <div className="flex-1 text-center text-[11.5px] text-muted-foreground">Onboardly.app/onboarding/abc123</div>
             </div>
             <div className="p-5 bg-background space-y-3">
               {[
@@ -298,7 +298,7 @@ export default function Landing() {
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />What they say
           </div>
           <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-12 max-w-[580px]">
-            Designers who switched to <em className="italic font-normal">Handoff</em>
+            Designers who switched to <em className="italic font-normal">Onboardly</em>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {TESTIMONIALS.map((t) =>
@@ -338,7 +338,7 @@ export default function Landing() {
       <footer className="px-6 md:px-10 py-6 border-t border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
           <div className="w-8 h-8 bg-foreground rounded-[9px] flex items-center justify-center text-sm text-background">⚡</div>
-          © 2026 Handoff. All rights reserved.
+          © 2026 Onboardly. All rights reserved.
         </div>
         <div className="flex gap-6">
           {["Privacy", "Terms", "Support"].map((l) =>

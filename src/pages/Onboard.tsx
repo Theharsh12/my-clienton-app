@@ -253,7 +253,7 @@ export default function Onboard() {
         <div className="max-w-[640px] mx-auto h-[60px] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-[34px] h-[34px] rounded-[9px] bg-primary flex items-center justify-center text-[15px] text-primary-foreground font-bold">⚡</div>
-            <span className="text-[15px] font-semibold text-foreground">Handoff</span>
+            <span className="text-[15px] font-semibold text-foreground">Onboardly</span>
           </div>
           <span className="text-xs text-muted-foreground">{completedCount}/{totalCount} completed</span>
         </div>

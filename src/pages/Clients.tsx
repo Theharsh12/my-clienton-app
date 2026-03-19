@@ -400,7 +400,7 @@ export default function Clients() {
         <div className="max-w-[960px] mx-auto h-[60px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-primary rounded-[9px] flex items-center justify-center text-[15px] text-primary-foreground shadow-[0_4px_12px_hsl(var(--accent-glow))]">⚡</div>
-            <span className="font-display text-xl text-foreground">Handoff</span>
+            <span className="font-display text-xl text-foreground">Onboardly</span>
           </div>
           <div className="flex items-center gap-3 sm:gap-5 flex-wrap justify-end text-xs">
     <div className="hidden sm:flex items-center gap-2">

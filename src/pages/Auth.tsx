@@ -56,7 +56,7 @@ export default function Auth() {
 
         <Link to="/" className="flex items-center gap-2.5 relative z-10">
           <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">⚡</div>
-          <span className="font-display text-[22px] text-foreground">Handoff</span>
+          <span className="font-display text-[22px] text-foreground">Onboardly</span>
         </Link>
 
         <div className="relative z-10">
@@ -111,7 +111,7 @@ export default function Auth() {
               {tab === "signup" ? "Create your account" : "Welcome back"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {tab === "signup" ? "Start onboarding clients in under 5 minutes." : "Sign in to your Handoff account."}
+              {tab === "signup" ? "Start onboarding clients in under 5 minutes." : "Sign in to your Onboardly account."}
             </p>
           </div>
 
