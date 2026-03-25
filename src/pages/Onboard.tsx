@@ -228,7 +228,7 @@ export default function Onboard() {
       setForm(prev => ({ ...prev, id: result.data.id, status: result.data.status as any }));
       setLastSaved(new Date());
       if (submit) toast.success("Brief submitted! Your designer has been notified. 🎉");
-      else        toast.success("Draft saved.");
+      // else        toast.success("Draft saved.");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to save. Please try again.");
     } finally {
