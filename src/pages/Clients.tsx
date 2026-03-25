@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
@@ -13,15 +13,16 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export interface ClientRow {
-  id:           string;
-  name:         string;
-  email:        string | null;
-  token:        string;
-  status:       "pending" | "completed";
-  created_at:   string;
-  progress:     number;
-  updated_at:   string | null;
-  client_state: "not_started" | "in_progress" | "needs_followup" | "completed";
+  id:             string;
+  name:           string;
+  email:          string | null;
+  token:          string;
+  status:         "pending" | "completed";
+  created_at:     string;
+  progress:       number;
+  updated_at:     string | null;
+  link_opened_at: string | null;
+  client_state:   "not_started" | "in_progress" | "needs_followup" | "completed";
 }
 
 type SortKey = "name" | "date" | "progress";
@@ -42,9 +43,9 @@ function calcProgress(r: any): number {
   return Math.round(fields.filter(Boolean).length / 8 * 100);
 }
 
-function deriveState(status: string, progress: number, updatedAt: string | null): ClientRow["client_state"] {
+function deriveState(status: string, progress: number, updatedAt: string | null, linkOpenedAt?: string | null): ClientRow["client_state"] {
   if (status === "completed") return "completed";
-  if (progress === 0) return "not_started";
+  if (progress === 0 && !linkOpenedAt) return "not_started";
   if (updatedAt) {
     const hoursAgo = (Date.now() - new Date(updatedAt).getTime()) / 36e5;
     if (hoursAgo > 48) return "needs_followup";
@@ -52,13 +53,14 @@ function deriveState(status: string, progress: number, updatedAt: string | null)
   return "in_progress";
 }
 
-function dynamicStatusLabel(state: ClientRow["client_state"]): string {
-  switch (state) {
-    case "not_started":    return "Waiting for client to open link";
-    case "in_progress":    return "Client started filling details";
-    case "needs_followup": return "No response in 48h — send reminder";
-    case "completed":      return "Onboarding complete";
+function dynamicStatusLabel(state: ClientRow["client_state"], linkOpenedAt?: string | null, progress?: number): string {
+  if (state === "completed") return "Onboarding complete";
+  if (state === "needs_followup") return "No response in 48h — send reminder";
+  if (state === "in_progress") {
+    if (linkOpenedAt && (progress ?? 0) === 0) return "Client viewed the onboarding form";
+    return "Client started filling details";
   }
+  return "Waiting for client to open link";
 }
 
 function nextAction(state: ClientRow["client_state"]): string {
@@ -151,7 +153,7 @@ export default function Clients() {
     try {
       const { data: clientsData, error } = await supabase
         .from("clients")
-        .select("id, name, email, token, status, created_at")
+        .select("id, name, email, token, status, created_at, link_opened_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
 
@@ -171,10 +173,11 @@ export default function Clients() {
         const updatedAt = r?.updated_at ?? null;
         return {
           ...c,
-          status:       (c.status === "completed" ? "completed" : "pending") as "pending"|"completed",
+          status:         (c.status === "completed" ? "completed" : "pending") as "pending"|"completed",
           progress,
-          updated_at:   updatedAt,
-          client_state: deriveState(c.status, progress, updatedAt),
+          updated_at:     updatedAt,
+          link_opened_at: c.link_opened_at ?? null,
+          client_state:   deriveState(c.status, progress, updatedAt, c.link_opened_at),
         };
       }));
     } catch (err) {
@@ -185,8 +188,37 @@ export default function Clients() {
     }
   }, [user]);
 
+  // Initial fetch
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
+  // Realtime subscription — auto-refresh when onboarding_responses or clients change
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "onboarding_responses" },
+        () => { fetchClients(); }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clients" },
+        () => { fetchClients(); }
+      )
+      .subscribe();
+
+    // Polling fallback — refresh every 15 seconds
+    const poll = setInterval(() => { fetchClients(); }, 15000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+  }, [user, fetchClients]);
+
+  // Auto-open create modal on first visit
   useEffect(() => {
     if (!loading && clients.length === 0 && !hasAutoOpened) {
       setHasAutoOpened(true);
@@ -466,7 +498,7 @@ export default function Clients() {
                       </div>
 
                       {/* Status description */}
-                      <p className="text-[11.5px] text-muted-foreground mb-1">{dynamicStatusLabel(client.client_state)}</p>
+                      <p className="text-[11.5px] text-muted-foreground mb-1">{dynamicStatusLabel(client.client_state, client.link_opened_at, client.progress)}</p>
 
                       {/* Next action + time */}
                       <div className="flex items-center gap-3">

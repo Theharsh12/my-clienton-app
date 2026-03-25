@@ -133,8 +133,8 @@ export default function ClientDetailDialog({ client, onClose, onUpdated }: Props
     {
       icon:  "👁",
       label: "Client opened link",
-      time:  response?.created_at ?? null,
-      done:  !!response,
+      time:  client.link_opened_at ?? null,
+      done:  !!(client.link_opened_at),
     },
     {
       icon:  "✍️",

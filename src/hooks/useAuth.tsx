@@ -20,10 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Google OAuth ya koi bhi OAuth ke baad — /clients pe redirect karo
+        if (event === "SIGNED_IN") {
+          const currentPath = window.location.pathname;
+          // Sirf tab redirect karo jab auth page pe ho ya root pe ho
+          if (currentPath === "/auth" || currentPath === "/") {
+            window.location.href = "/clients";
+          }
+        }
+
+        if (event === "SIGNED_OUT") {
+          window.location.href = "/";
+        }
       }
     );
 

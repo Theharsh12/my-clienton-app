@@ -73,6 +73,14 @@ export default function Onboard() {
       if (error || !client) { setNotFound(true); setLoading(false); return; }
       setClientName(client.name);
       setClientId(client.id);
+
+      // Track that client opened the link
+      await supabase
+        .from("clients")
+        .update({ link_opened_at: new Date().toISOString() })
+        .eq("id", client.id)
+        .is("link_opened_at", null); // only update if not already set
+
       const { data: existing } = await supabase
         .from("onboarding_responses").select("*").eq("client_id", client.id).maybeSingle();
       if (existing) {
@@ -160,6 +168,27 @@ export default function Onboard() {
   const removeFile = (i: number) =>
     set("files", form.files.filter((_, idx) => idx !== i));
 
+  // ── Create empty draft on first keystroke ────────────────────────────────────
+  // This makes "Started filling form" appear on dashboard immediately
+
+  const createDraftIfNeeded = async () => {
+    if (form.id || !clientId) return; // already exists
+    try {
+      const { data, error } = await supabase
+        .from("onboarding_responses")
+        .insert({
+          client_id:  clientId,
+          status:     "pending",
+          updated_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      if (!error && data) {
+        setForm(prev => ({ ...prev, id: data.id }));
+      }
+    } catch (_) {}
+  };
+
   // ── Save ──────────────────────────────────────────────────────────────────────
 
   const handleSave = async (submit = false) => {
@@ -190,8 +219,10 @@ export default function Onboard() {
         result = await supabase.from("onboarding_responses")
           .update(payload).eq("id", form.id).select("id, status").single();
       } else {
+        // upsert in case draft was created by createDraftIfNeeded concurrently
         result = await supabase.from("onboarding_responses")
-          .insert(payload).select("id, status").single();
+          .upsert({ ...payload }, { onConflict: "client_id" })
+          .select("id, status").single();
       }
       if (result.error) throw result.error;
       setForm(prev => ({ ...prev, id: result.data.id, status: result.data.status as any }));
@@ -328,8 +359,8 @@ export default function Onboard() {
             <p className="text-[12px] text-muted-foreground mb-3">What's the name of your business or brand?</p>
             <input className={inputCls} placeholder="e.g. Sharma Enterprises"
               value={form.business_name}
-              onChange={e => set("business_name", e.target.value)}
-              onBlur={() => form.id && handleSave(false)}
+              onChange={e => { set("business_name", e.target.value); createDraftIfNeeded(); }}
+              onBlur={() => handleSave(false)}
               disabled={isSubmitted} />
           </motion.div>
 
@@ -341,8 +372,8 @@ export default function Onboard() {
             <textarea className={inputCls + " min-h-[90px] resize-y"}
               placeholder="e.g. We are a boutique interior design studio specialising in modern residential spaces..."
               value={form.business_description}
-              onChange={e => set("business_description", e.target.value)}
-              onBlur={() => form.id && handleSave(false)}
+              onChange={e => { set("business_description", e.target.value); createDraftIfNeeded(); }}
+              onBlur={() => handleSave(false)}
               disabled={isSubmitted} />
           </motion.div>
 
@@ -354,8 +385,8 @@ export default function Onboard() {
             <textarea className={inputCls + " min-h-[80px] resize-y"}
               placeholder="e.g. Home owners aged 30–55, looking for premium interior design services..."
               value={form.target_audience}
-              onChange={e => set("target_audience", e.target.value)}
-              onBlur={() => form.id && handleSave(false)}
+              onChange={e => { set("target_audience", e.target.value); createDraftIfNeeded(); }}
+              onBlur={() => handleSave(false)}
               disabled={isSubmitted} />
           </motion.div>
 
@@ -367,8 +398,8 @@ export default function Onboard() {
             <textarea className={inputCls + " min-h-[80px] resize-y"}
               placeholder="e.g. www.competitor.com — I like their clean layout. Also love Apple.com..."
               value={form.competitors}
-              onChange={e => set("competitors", e.target.value)}
-              onBlur={() => form.id && handleSave(false)}
+              onChange={e => { set("competitors", e.target.value); createDraftIfNeeded(); }}
+              onBlur={() => handleSave(false)}
               disabled={isSubmitted} />
           </motion.div>
 
@@ -385,8 +416,8 @@ export default function Onboard() {
             <textarea className={inputCls + " min-h-[90px] resize-y"}
               placeholder="e.g. Modern, minimal, bold. I want visitors to immediately book a consultation..."
               value={form.website_goal}
-              onChange={e => set("website_goal", e.target.value)}
-              onBlur={() => form.id && handleSave(false)}
+              onChange={e => { set("website_goal", e.target.value); createDraftIfNeeded(); }}
+              onBlur={() => handleSave(false)}
               disabled={isSubmitted} />
           </motion.div>
 
@@ -567,7 +598,7 @@ export default function Onboard() {
                             placeholder="Anything your designer should know that wasn't covered above... e.g. specific colors to avoid, inspiration, technical requirements, etc."
                             value={form.extra_notes}
                             onChange={e => set("extra_notes", e.target.value)}
-                            onBlur={() => form.id && handleSave(false)} />
+                            onBlur={() => handleSave(false)} />
                         </div>
                       </motion.div>
                     )}
@@ -588,7 +619,7 @@ export default function Onboard() {
                                     value={field.label} onChange={e => updateCustomField(i, "label", e.target.value)} />
                                   <input className={inputCls} placeholder="Your answer"
                                     value={field.answer} onChange={e => updateCustomField(i, "answer", e.target.value)}
-                                    onBlur={() => form.id && handleSave(false)} />
+                                    onBlur={() => handleSave(false)} />
                                 </div>
                                 <button onClick={() => removeCustomField(i)}
                                   className="mt-2 text-muted-foreground hover:text-destructive transition-colors shrink-0">
