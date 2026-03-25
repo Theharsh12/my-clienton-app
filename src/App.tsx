@@ -11,6 +11,7 @@ import Onboard from "./pages/Onboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { initGA, trackPage } from "./lib/analytics";
+import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
           </Routes>
         </AuthProvider>
       </BrowserRouter>
+      <Analytics />
     </TooltipProvider>
   </QueryClientProvider>
 );
