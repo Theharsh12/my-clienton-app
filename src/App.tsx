@@ -11,6 +11,8 @@ import Onboard from "./pages/Onboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { initGA, trackPage } from "./lib/analytics";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
 
