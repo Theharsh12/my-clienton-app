@@ -25,10 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Google OAuth ya koi bhi OAuth ke baad — /clients pe redirect karo
         if (event === "SIGNED_IN") {
           const currentPath = window.location.pathname;
-          // Sirf tab redirect karo jab auth page pe ho ya root pe ho
           if (currentPath === "/auth" || currentPath === "/") {
             window.location.href = "/clients";
           }
@@ -64,10 +62,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) return { error };
 
     if (data.user) {
-      // Ensure a profile row always exists for plan & metadata updates
       await supabase
         .from("profiles")
-        .upsert({ user_id: data.user.id, full_name: fullName }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: data.user.id, full_name: fullName, plan: "free" },
+          { onConflict: "user_id" }
+        );
     }
 
     return { error: null };

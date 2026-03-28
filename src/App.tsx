@@ -14,31 +14,28 @@ import { initGA, trackPage } from "./lib/analytics";
 
 const queryClient = new QueryClient();
 
-// ✅ Analytics tracker
+// Initialize GA once
+initGA();
+
+// Analytics tracker — must be inside BrowserRouter
 function AnalyticsTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    initGA();
-  }, []);
-
-  useEffect(() => {
     trackPage(location.pathname);
-  }, [location]);
+  }, [location.pathname]);
 
   return null;
 }
 
-// ✅ Main App
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AnalyticsTracker /> {/* ✅ yaha lagana tha */}
-
         <AuthProvider>
+          <AnalyticsTracker />
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
