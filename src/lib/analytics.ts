@@ -1,6 +1,12 @@
 import ReactGA from "react-ga4";
 export const initGA = () => {
- ReactGA.initialize(import.meta.env.VITE_GA_MEASUREMENT_ID);};
+  const id = import.meta.env.VITE_GA_MEASUREMENT_ID;
+  if (id && typeof id === 'string') {
+    ReactGA.initialize(id);
+  } else {
+    console.warn("GA ID missing or invalid");
+  }
+};
 
 export const trackPage = (path: string) => {
   ReactGA.send({ hitType: "pageview", page: path });

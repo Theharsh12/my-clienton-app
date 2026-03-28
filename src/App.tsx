@@ -35,12 +35,15 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter> 
+        {/* Tracker ko BrowserRouter ke andar hona chahiye */}
+        <AnalyticsTracker /> 
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/clients" element={<Clients />} />
+            <Route path="/onboard/:token" element={<Onboard />} />
             <Route path="/onboarding/:token" element={<Onboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
