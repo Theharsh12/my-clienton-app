@@ -10,11 +10,24 @@ import Clients from "./pages/Clients";
 import Onboard from "./pages/Onboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { initGA, trackPage } from "./lib/analytics";
 
 const queryClient = new QueryClient();
 
+// ✅ Analytics Tracker (properly defined)
+const AnalyticsTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    initGA();
+  }, []);
+
+  useEffect(() => {
+    trackPage(location.pathname);
+  }, [location]);
+
+  return null;
+};
 
 // ✅ Main App
 const App = () => (
@@ -24,19 +37,18 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          {/* <AnalyticsTracker /> {/* ← BrowserRouter ke andar, AuthProvider ke andar */}
-          {/* <Routes>
+          <AnalyticsTracker />
+          <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/onboarding/:token" element={<Onboard />} />
-            <Route path="/onboard/:token" element={<Onboard />} />
             <Route path="*" element={<NotFound />} />
-          </Routes> */}
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-); */}
+);
 
 export default App;
