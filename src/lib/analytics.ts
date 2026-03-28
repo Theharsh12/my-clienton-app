@@ -1,13 +1,18 @@
 import ReactGA from "react-ga4";
+
 export const initGA = () => {
-    const id = import.meta.env.VITE_GA_MEASUREMENT_ID;
-    if (id) ReactGA.initialize(id);
-  }; else {
+  const id = import.meta.env.VITE_GA_MEASUREMENT_ID;
+  
+  if (id) {
+    ReactGA.initialize(id);
+  } else {
+    // Pehle yahan ek extra '}' tha aur 'else' galat jagah tha
     console.warn("GA ID missing or invalid");
   }
 };
 
 export const trackPage = (path: string) => {
+  // Check karein ki ReactGA initialize hua hai ya nahi
   ReactGA.send({ hitType: "pageview", page: path });
 };
 

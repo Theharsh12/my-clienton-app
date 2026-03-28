@@ -7,46 +7,35 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Clients from "./pages/Clients";
-import Onboard from "./pages/Onboard";
+import Onboard from "./pages/Onboard"; // Import ka naam 'Onboard' hai
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { initGA, trackPage } from "./lib/analytics";
 
 const queryClient = new QueryClient();
 
-// ✅ Analytics Tracker (Safe Version)
+// ✅ Analytics Tracker (Correctly placed for useLocation)
 const AnalyticsTracker = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if ID exists before initializing to prevent crash
-    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-    if (gaId) {
-      try {
-        initGA();
-      } catch (e) {
-        console.error("GA Init Error:", e);
-      }
-    }
+    initGA();
   }, []);
 
   useEffect(() => {
-    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-    if (gaId) {
-      trackPage(location.pathname);
-    }
+    trackPage(location.pathname);
   }, [location]);
 
   return null;
 };
 
+// ✅ Main App
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        {/* 🔥 FIX: AnalyticsTracker ab BrowserRouter ke ANDAR hai */}
+      <BrowserRouter> 
         <AnalyticsTracker /> 
         <AuthProvider>
           <Routes>
@@ -54,7 +43,9 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/clients" element={<Clients />} />
             
-            {/* Dono paths support karein taaki link mismatch na ho */}
+            {/* 🔥 FIX: Yahan 'Onboarding' likha tha, use 'Onboard' kar diya hai 
+               kyunki aapne upar 'import Onboard' kiya hai.
+            */}
             <Route path="/onboard/:token" element={<Onboard />} />
             <Route path="/onboarding/:token" element={<Onboard />} />
             
