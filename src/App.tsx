@@ -14,37 +14,50 @@ import { initGA, trackPage } from "./lib/analytics";
 
 const queryClient = new QueryClient();
 
-// ✅ Analytics Tracker (properly defined)
+// ✅ Analytics Tracker (Safe Version)
 const AnalyticsTracker = () => {
   const location = useLocation();
 
   useEffect(() => {
-    initGA();
+    // Check if ID exists before initializing to prevent crash
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (gaId) {
+      try {
+        initGA();
+      } catch (e) {
+        console.error("GA Init Error:", e);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    trackPage(location.pathname);
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (gaId) {
+      trackPage(location.pathname);
+    }
   }, [location]);
 
   return null;
 };
 
-// ✅ Main App
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter> 
-        {/* Tracker ko BrowserRouter ke andar hona chahiye */}
+      <BrowserRouter>
+        {/* 🔥 FIX: AnalyticsTracker ab BrowserRouter ke ANDAR hai */}
         <AnalyticsTracker /> 
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/clients" element={<Clients />} />
+            
+            {/* Dono paths support karein taaki link mismatch na ho */}
             <Route path="/onboard/:token" element={<Onboard />} />
             <Route path="/onboarding/:token" element={<Onboard />} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
