@@ -12,8 +12,9 @@ export const initGA = () => {
 };
 
 export const trackPage = (path: string) => {
-  // Check karein ki ReactGA initialize hua hai ya nahi
-  ReactGA.send({ hitType: "pageview", page: path });
+  if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
+    ReactGA.send({ hitType: "pageview", page: path });
+  }
 };
 
 export const trackEvent = (action: string, category: string, label?: string) => {
