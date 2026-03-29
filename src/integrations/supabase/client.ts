@@ -11,7 +11,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 }
 
 export const supabase = createClient(
-  SUPABASE_URL || "https://owgouuqnbgafmsnzcnbm.supabase.co",
+  SUPABASE_URL || "https://placeholder.supabase.co",
   SUPABASE_ANON_KEY || "public-anon-key",
   {
     auth: {
