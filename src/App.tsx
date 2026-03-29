@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";   // ✅ Use Sonner only
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
@@ -11,27 +10,27 @@ import Onboard from "./pages/Onboard";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { initGA, trackPage } from "./lib/analytics";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const queryClient = new QueryClient();
 
 const AnalyticsTracker = () => {
   const location = useLocation();
+
   useEffect(() => { 
-    try { initGA(); } catch(e) { console.error(e); }
+    try { initGA(); } catch (e) { console.error(e); }
   }, []);
+
   useEffect(() => { 
-    try { trackPage(location.pathname); } catch(e) { console.error(e); }
+    try { trackPage(location.pathname); } catch (e) { console.error(e); }
   }, [location]);
+
   return null;
 };
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <Toaster /> {/* ✅ Only one toast system */}
       <BrowserRouter>
         <AnalyticsTracker /> 
         <AuthProvider>

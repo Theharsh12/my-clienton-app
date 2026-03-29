@@ -2,11 +2,10 @@ import ReactGA from "react-ga4";
 
 export const initGA = () => {
   const id = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  
+
   if (id) {
     ReactGA.initialize(id);
   } else {
-    // Pehle yahan ek extra '}' tha aur 'else' galat jagah tha
     console.warn("GA ID missing or invalid");
   }
 };
