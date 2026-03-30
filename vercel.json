@@ -1,11 +1,14 @@
 {
-  "headers":[
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
     {
-      "source":"(.*)",
-      "headers":[
+      "source": "/(.*)",
+      "headers": [
         {
-          "key":"Content-Security-Policy",
-          "value":"default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:;"
+          "key": "Content-Security-Policy",
+          "value": "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:;"
         }
       ]
     }
