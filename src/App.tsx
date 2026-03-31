@@ -1,38 +1,22 @@
-import { Toaster } from "@/components/ui/sonner";   // ✅ Use Sonner only
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
+
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Clients from "./pages/Clients";
-import Onboard from "./pages/Onboard"; 
+import Onboard from "./pages/Onboard";
 import NotFound from "./pages/NotFound";
-import { useEffect } from "react";
-import { initGA, trackPage } from "./lib/analytics";
 
 const queryClient = new QueryClient();
-
-const AnalyticsTracker = () => {
-  const location = useLocation();
-
-  useEffect(() => { 
-    try { initGA(); } catch (e) { console.error(e); }
-  }, []);
-
-  useEffect(() => { 
-    try { trackPage(location.pathname); } catch (e) { console.error(e); }
-  }, [location]);
-
-  return null;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster /> {/* ✅ Only one toast system */}
+      <Toaster />
       <BrowserRouter>
-        <AnalyticsTracker /> 
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
