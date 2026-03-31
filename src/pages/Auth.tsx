@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "../integrations/supabase/client";
 
 export default function Auth() {
   const { user, signUp, signIn } = useAuth();
@@ -18,6 +18,11 @@ export default function Auth() {
 
   const [signupForm, setSignupForm] = useState({ fullName: "", email: "", password: "" });
   const [loginForm,  setLoginForm]  = useState({ email: "", password: "" });
+
+  if (!supabase) {
+  console.error("Supabase not initialized");
+  return <div>Loading...</div>;
+}
 
   if (user) return <Navigate to="/clients" replace />;
 
