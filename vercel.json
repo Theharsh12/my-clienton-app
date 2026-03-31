@@ -8,7 +8,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; script-src * data: blob: 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' data: blob:;"
+          "value": "default-src 'self' * data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' * data: blob:; style-src 'self' 'unsafe-inline' * data: blob:; img-src 'self' * data: blob:; font-src 'self' * data:; connect-src 'self' *;"
         }
       ]
     }
