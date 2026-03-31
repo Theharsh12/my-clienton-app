@@ -5,6 +5,14 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Important for Vercel + Preview
+  base: "/",                    // ← Yeh line add karo
+
+  build: {
+    outDir: "dist",             // Default hota hai lekin explicitly daal do
+    emptyOutDir: true,          // Build folder clean karega
+  },
+
   server: {
     host: "::",
     port: 8080,
@@ -12,7 +20,9 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
