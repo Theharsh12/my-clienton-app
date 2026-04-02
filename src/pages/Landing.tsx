@@ -241,7 +241,7 @@ export default function Landing() {
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 relative z-10"
         >
           <Link to="/auth" className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-primary-foreground bg-primary shadow-[0_4px_20px_hsl(var(--accent-glow))] hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_hsl(var(--accent-glow))] transition-all">
-            Start Free — no credit card needed ⚡
+            Try With Your Next Client! ⚡
           </Link>
         </motion.div>
 
