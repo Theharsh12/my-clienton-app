@@ -31,11 +31,11 @@ const FEATURES = [
 
 const BEFORE_AFTER = [
   {
-    before: "\"Hey, can you send me your logo again?\"",
+    before: "Hey, can you send me your logo again?",
     after: "Logo uploaded. Sitting in your dashboard.",
   },
   {
-    before: "3 emails, 2 WhatsApp messages, still no brand colors.",
+    before: "3 follow-ups later...Still missing files.",
     after: "Client filled everything in one sitting.",
   },
   {
