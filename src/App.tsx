@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import { useEffect } from "react";
-import { initGA, trackPage } from "./lib/analytics"; // Analytics wapas add kiya
+import { initGA, trackPage } from "./lib/analytics";
 
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -14,40 +14,43 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// ✅ Analytics Tracker: BrowserRouter ke andar hona zaroori hai
-// const AnalyticsTracker = () => {
-//   const location = useLocation();
+// ✅ Analytics logic ko alag component mein rakha hai
+const AnalyticsTracker = () => {
+  const location = useLocation();
 
-//   useEffect(() => {
-//     initGA();
-//   }, []);
+  useEffect(() => {
+    initGA();
+  }, []);
 
-//   useEffect(() => {
-//     trackPage(location.pathname);
-//   }, [location]);
+  useEffect(() => {
+    trackPage(location.pathname);
+  }, [location]);
 
-//   return null;
-// };
+  return null;
+};
 
-// const App = () => (
-//   <QueryClientProvider client={queryClient}>
-//     <TooltipProvider>
-//       <Toaster />
-//       <BrowserRouter>
-//         <AnalyticsTracker /> 
-//         <AuthProvider>
-//           <Routes>
-//             <Route path="/" element={<Landing />} />
-//             <Route path="/auth" element={<Auth />} />
-//             <Route path="/clients" element={<Clients />} />
-//             <Route path="/onboard/:token" element={<Onboard />} />
-//             <Route path="/onboarding/:token" element={<Onboard />} />
-//             <Route path="*" element={<NotFound />} />
-//           </Routes>
-//         </AuthProvider>
-//       </BrowserRouter>
-//     </TooltipProvider>
-//   </QueryClientProvider>
-// );
-// //
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <BrowserRouter>
+          {/* ✅ BrowserRouter ke andar hone se useLocation() crash nahi karega */}
+          <AnalyticsTracker /> 
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/onboard/:token" element={<Onboard />} />
+              <Route path="/onboarding/:token" element={<Onboard />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
 export default App;
