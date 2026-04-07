@@ -34,7 +34,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
-        {/* 🔥 Analytics Tracker yahan hona chahiye */}
         <AnalyticsTracker /> 
         <AuthProvider>
           <Routes>
