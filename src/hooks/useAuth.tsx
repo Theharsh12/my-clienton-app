@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "../integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import { useNavigate, useLocation } from "react-router-dom";
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -22,29 +23,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    // 1. Get initial session safely
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+      } catch (err) {
+        console.error("Auth init error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initSession();
+
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setLoading(false);
 
-        if (event === "SIGNED_IN" && session) {
-          // Redirect only if user is on auth or landing page
+        // ✅ FIXED REDIRECT LOGIC
+        if (event === "SIGNED_IN" && currentSession) {
+          // Agar user login/auth page par hai, tabhi redirect karein
           if (location.pathname === "/auth" || location.pathname === "/") {
             navigate("/clients", { replace: true });
           }
         }
-
+        
         if (event === "SIGNED_OUT") {
-          navigate("/", { replace: true });
+          navigate("/auth", { replace: true });
         }
       }
     );
@@ -56,26 +66,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const normalizedEmail = email.trim().toLowerCase();
+    
+    // ✅ Use a clean origin URL for Vercel compatibility
+    const redirectUrl = window.location.origin.includes('localhost') 
+      ? `${window.location.origin}/auth` 
+      : 'https://my-onboardly.vercel.app/auth';
 
     const { data, error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: redirectUrl,
       },
     });
 
     if (error) return { error };
 
-    // Create profile row
-    if (data.user) {
-      await supabase
+    // 3. Create profile row only if user exists
+    if (data?.user) {
+      const { error: profileError } = await supabase
         .from("profiles")
         .upsert(
           { user_id: data.user.id, full_name: fullName },
           { onConflict: "user_id" }
         );
+      
+      if (profileError) console.error("Profile creation failed:", profileError);
     }
 
     return { error: null };
@@ -91,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
   const value = {
@@ -102,17 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return ctx;
-}
+  return context;
+};
