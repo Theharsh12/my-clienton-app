@@ -15,39 +15,39 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 // ✅ Analytics Tracker: BrowserRouter ke andar hona zaroori hai
-const AnalyticsTracker = () => {
-  const location = useLocation();
+// const AnalyticsTracker = () => {
+//   const location = useLocation();
 
-  useEffect(() => {
-    initGA();
-  }, []);
+//   useEffect(() => {
+//     initGA();
+//   }, []);
 
-  useEffect(() => {
-    trackPage(location.pathname);
-  }, [location]);
+//   useEffect(() => {
+//     trackPage(location.pathname);
+//   }, [location]);
 
-  return null;
-};
+//   return null;
+// };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <BrowserRouter>
-        <AnalyticsTracker /> 
-        <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/onboard/:token" element={<Onboard />} />
-            <Route path="/onboarding/:token" element={<Onboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
+// const App = () => (
+//   <QueryClientProvider client={queryClient}>
+//     <TooltipProvider>
+//       <Toaster />
+//       <BrowserRouter>
+//         <AnalyticsTracker /> 
+//         <AuthProvider>
+//           <Routes>
+//             <Route path="/" element={<Landing />} />
+//             <Route path="/auth" element={<Auth />} />
+//             <Route path="/clients" element={<Clients />} />
+//             <Route path="/onboard/:token" element={<Onboard />} />
+//             <Route path="/onboarding/:token" element={<Onboard />} />
+//             <Route path="*" element={<NotFound />} />
+//           </Routes>
+//         </AuthProvider>
+//       </BrowserRouter>
+//     </TooltipProvider>
+//   </QueryClientProvider>
+// );
+// //
 export default App;
