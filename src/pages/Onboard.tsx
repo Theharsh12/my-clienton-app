@@ -12,18 +12,18 @@ interface UploadedFile { name: string; url: string; type: string; }
 
 interface OnboardingForm {
   id?: string;
-  business_name:        string;
+  business_name: string;
   business_description: string;
-  target_audience:      string;
-  competitors:          string;
-  website_goal:         string;
-  pages_needed:         string[];
-  budget:               string;
-  timeline:             string;
-  extra_notes:          string;
-  files:                UploadedFile[];
-  custom_fields:        CustomField[];
-  status:               "pending" | "submitted";
+  target_audience: string;
+  competitors: string;
+  website_goal: string;
+  pages_needed: string[];
+  budget: string;
+  timeline: string;
+  extra_notes: string;
+  files: UploadedFile[];
+  custom_fields: CustomField[];
+  status: "pending" | "submitted";
 }
 
 const EMPTY_FORM: OnboardingForm = {
@@ -34,15 +34,15 @@ const EMPTY_FORM: OnboardingForm = {
 };
 
 const PAGES_OPTIONS = [
-  "Home","About","Services","Contact","Blog","Portfolio",
-  "Testimonials","FAQ","Pricing","Team","Gallery","Shop",
+  "Home", "About", "Services", "Contact", "Blog", "Portfolio",
+  "Testimonials", "FAQ", "Pricing", "Team", "Gallery", "Shop",
 ];
 const BUDGET_OPTIONS = [
-  "Under ₹15,000","₹15,000 – ₹30,000","₹30,000 – ₹60,000",
-  "₹60,000 – ₹1,00,000","Above ₹1,00,000","Let's discuss",
+  "Under ₹15,000", "₹15,000 – ₹30,000", "₹30,000 – ₹60,000",
+  "₹60,000 – ₹1,00,000", "Above ₹1,00,000", "Let's discuss",
 ];
 const TIMELINE_OPTIONS = [
-  "ASAP (within 1 week)","2–4 weeks","1–2 months","2–3 months","Flexible / No rush",
+  "ASAP (within 1 week)", "2–4 weeks", "1–2 months", "2–3 months", "Flexible / No rush",
 ];
 
 // ── Main ───────────────────────────────────────────────────────────────────────
@@ -50,16 +50,16 @@ const TIMELINE_OPTIONS = [
 export default function Onboard() {
   const { token } = useParams<{ token: string }>();
   const [clientName, setClientName] = useState("");
-  const [clientId,   setClientId]   = useState("");
-  const [form,       setForm]       = useState<OnboardingForm>(EMPTY_FORM);
-  const [loading,    setLoading]    = useState(true);
-  const [saving,     setSaving]     = useState(false);
-  const [uploading,  setUploading]  = useState(false);
-  const [lastSaved,  setLastSaved]  = useState<Date | null>(null);
-  const [notFound,   setNotFound]   = useState(false);
-  const [extraPage,  setExtraPage]  = useState("");
-  const [showExtra,  setShowExtra]  = useState(false);
-  const [activeExtra, setActiveExtra] = useState<"files"|"notes"|"fields"|null>(null);
+  const [clientId, setClientId] = useState("");
+  const [form, setForm] = useState<OnboardingForm>(EMPTY_FORM);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [extraPage, setExtraPage] = useState("");
+  const [showExtra, setShowExtra] = useState(false);
+  const [activeExtra, setActiveExtra] = useState<"files" | "notes" | "fields" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Load ──────────────────────────────────────────────────────────────────────
@@ -85,19 +85,19 @@ export default function Onboard() {
         .from("onboarding_responses").select("*").eq("client_id", client.id).maybeSingle();
       if (existing) {
         setForm({
-          id:                   existing.id,
-          business_name:        existing.business_name        ?? "",
+          id: existing.id,
+          business_name: existing.business_name ?? "",
           business_description: existing.business_description ?? "",
-          target_audience:      existing.target_audience      ?? "",
-          competitors:          existing.competitors          ?? "",
-          website_goal:         existing.website_goal         ?? "",
-          pages_needed:         existing.pages_needed         ?? [],
-          budget:               existing.budget               ?? "",
-          timeline:             existing.timeline             ?? "",
-          extra_notes:          existing.extra_notes          ?? "",
-          files:                existing.files                ?? [],
-          custom_fields:        existing.custom_fields        ?? [],
-          status:               existing.status               ?? "pending",
+          target_audience: existing.target_audience ?? "",
+          competitors: existing.competitors ?? "",
+          website_goal: existing.website_goal ?? "",
+          pages_needed: existing.pages_needed ?? [],
+          budget: existing.budget ?? "",
+          timeline: existing.timeline ?? "",
+          extra_notes: existing.extra_notes ?? "",
+          files: existing.files ?? [],
+          custom_fields: existing.custom_fields ?? [],
+          status: existing.status ?? "pending",
         });
         if (existing.extra_notes || (existing.files?.length > 0) || (existing.custom_fields?.length > 0)) {
           setShowExtra(true);
@@ -138,7 +138,7 @@ export default function Onboard() {
   const addCustomField = () =>
     set("custom_fields", [...form.custom_fields, { label: "", answer: "" }]);
 
-  const updateCustomField = (i: number, key: "label"|"answer", val: string) =>
+  const updateCustomField = (i: number, key: "label" | "answer", val: string) =>
     set("custom_fields", form.custom_fields.map((f, idx) => idx === i ? { ...f, [key]: val } : f));
 
   const removeCustomField = (i: number) =>
@@ -177,8 +177,8 @@ export default function Onboard() {
       const { data, error } = await supabase
         .from("onboarding_responses")
         .insert({
-          client_id:  clientId,
-          status:     "pending",
+          client_id: clientId,
+          status: "pending",
           updated_at: new Date().toISOString(),
         })
         .select("id")
@@ -186,7 +186,7 @@ export default function Onboard() {
       if (!error && data) {
         setForm(prev => ({ ...prev, id: data.id }));
       }
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────────
@@ -196,22 +196,22 @@ export default function Onboard() {
     setSaving(true);
     try {
       const payload = {
-        client_id:            clientId,
-        business_name:        form.business_name        || null,
+        client_id: clientId,
+        business_name: form.business_name || null,
         business_description: form.business_description || null,
-        target_audience:      form.target_audience      || null,
-        competitors:          form.competitors          || null,
-        website_goal:         form.website_goal         || null,
-        pages_needed:         form.pages_needed.length > 0 ? form.pages_needed : null,
-        budget:               form.budget               || null,
-        timeline:             form.timeline             || null,
-        extra_notes:          form.extra_notes          || null,
-        files:                form.files.length > 0 ? form.files : null,
-        custom_fields:        form.custom_fields.filter(f => f.label.trim()).length > 0
-                                ? form.custom_fields.filter(f => f.label.trim()) : null,
-        status:               submit ? "submitted" : "pending",
-        submitted_at:         submit ? new Date().toISOString() : null,
-        updated_at:           new Date().toISOString(),
+        target_audience: form.target_audience || null,
+        competitors: form.competitors || null,
+        website_goal: form.website_goal || null,
+        pages_needed: form.pages_needed.length > 0 ? form.pages_needed : null,
+        budget: form.budget || null,
+        timeline: form.timeline || null,
+        extra_notes: form.extra_notes || null,
+        files: form.files.length > 0 ? form.files : null,
+        custom_fields: form.custom_fields.filter(f => f.label.trim()).length > 0
+          ? form.custom_fields.filter(f => f.label.trim()) : null,
+        status: submit ? "submitted" : "pending",
+        submitted_at: submit ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
       };
 
       let result;
@@ -245,7 +245,7 @@ export default function Onboard() {
     disabled:opacity-50 disabled:cursor-not-allowed`;
 
   const isSubmitted = form.status === "submitted";
-  const canSubmit   = !saving && form.business_name.trim() && form.website_goal.trim();
+  const canSubmit = !saving && form.business_name.trim() && form.website_goal.trim();
 
   const filledCount = [
     form.business_name, form.business_description, form.target_audience,
@@ -283,21 +283,43 @@ export default function Onboard() {
           <span className="text-[15px] font-semibold text-foreground">Onboardly</span>
         </div>
       </header>
-      <div className="max-w-[640px] mx-auto px-6 py-20 text-center">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-          <div className="text-[64px] mb-4">🎉</div>
-          <h2 className="font-display text-[32px] text-foreground mb-3">Brief submitted!</h2>
-          <p className="text-sm text-muted-foreground max-w-[380px] mx-auto leading-relaxed">
-            Thank you, <strong className="text-foreground">{clientName}</strong>! Your project brief has been sent to your designer.
+      <div className="max-w-[640px] mx-auto px-6 py-20 text-center flex flex-col items-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: [0, 1.2, 1] }}
+          transition={{ type: "spring", damping: 15 }}
+          className="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-[48px] mb-6 shadow-[0_8px_30px_rgba(16,185,129,0.15)]"
+        >
+          ✨
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <h2 className="font-display text-[40px] text-foreground tracking-tight leading-none mb-4">Brief submitted!</h2>
+          <p className="text-[15px] text-muted-foreground max-w-[420px] mx-auto leading-relaxed mb-10">
+            Thank you, <strong className="text-foreground font-semibold">{clientName}</strong>! Your project brief has been successfully sent.
           </p>
-          <div className="mt-8 bg-card border border-primary/20 rounded-2xl p-6 text-left space-y-3">
-            <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">What happens next?</p>
-            {["Your designer reviews your brief","They'll reach out to discuss the project","Design work begins!"].map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0">{i+1}</div>
-                <span className="text-[13px] text-foreground">{step}</span>
-              </div>
-            ))}
+
+          <div className="bg-surface border border-border rounded-2xl p-6 text-left shadow-sm max-w-[420px] mx-auto">
+            <p className="text-[11px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" /> What happens next?
+            </p>
+            <div className="space-y-4">
+              {[
+                { icon: "👀", text: "Your designer reviews your brief" },
+                { icon: "💬", text: "They'll reach out to discuss the project" },
+                { icon: "🚀", text: "Design work begins!" }
+              ].map((step, i) => (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  key={i}
+                  className="flex items-center gap-3.5"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 text-[14px] flex items-center justify-center shrink-0 border border-primary/20 shadow-sm">{step.icon}</div>
+                  <span className="text-[14px] font-medium text-foreground">{step.text}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -429,11 +451,10 @@ export default function Onboard() {
             <div className="flex flex-wrap gap-2 mb-3">
               {PAGES_OPTIONS.map(page => (
                 <button key={page} type="button" onClick={() => togglePage(page)} disabled={isSubmitted}
-                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all ${
-                    form.pages_needed.includes(page)
+                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all ${form.pages_needed.includes(page)
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
                   {page}
                 </button>
               ))}
@@ -470,10 +491,9 @@ export default function Onboard() {
                 <button key={b} type="button"
                   onClick={() => { set("budget", b); form.id && setTimeout(() => handleSave(false), 0); }}
                   disabled={isSubmitted}
-                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${
-                    form.budget === b ? "bg-primary/8 border-primary/30 text-primary"
-                    : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.budget === b ? "bg-primary/8 border-primary/30 text-primary"
+                      : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
                   {b}
                 </button>
               ))}
@@ -490,10 +510,9 @@ export default function Onboard() {
                 <button key={t} type="button"
                   onClick={() => { set("timeline", t); form.id && setTimeout(() => handleSave(false), 0); }}
                   disabled={isSubmitted}
-                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${
-                    form.timeline === t ? "bg-primary/8 border-primary/30 text-primary"
-                    : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.timeline === t ? "bg-primary/8 border-primary/30 text-primary"
+                      : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
                   {t}
                 </button>
               ))}
@@ -519,17 +538,16 @@ export default function Onboard() {
                   {/* Option buttons */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {[
-                      { key: "files",  icon: <Upload size={16}/>,   label: "Upload Files",    desc: "Logo, images, docs" },
-                      { key: "notes",  icon: <FileText size={16}/>, label: "Add Notes",       desc: "Anything else" },
-                      { key: "fields", icon: <Plus size={16}/>,     label: "Custom Details",  desc: "Extra Q&A" },
+                      { key: "files", icon: <Upload size={16} />, label: "Upload Files", desc: "Logo, images, docs" },
+                      { key: "notes", icon: <FileText size={16} />, label: "Add Notes", desc: "Anything else" },
+                      { key: "fields", icon: <Plus size={16} />, label: "Custom Details", desc: "Extra Q&A" },
                     ].map(opt => (
                       <button key={opt.key} type="button"
                         onClick={() => setActiveExtra(activeExtra === opt.key as any ? null : opt.key as any)}
-                        className={`flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-xl border text-center transition-all ${
-                          activeExtra === opt.key
+                        className={`flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-xl border text-center transition-all ${activeExtra === opt.key
                             ? "bg-primary/8 border-primary/30 text-primary"
                             : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                        }`}>
+                          }`}>
                         {opt.icon}
                         <span className="text-[12px] font-medium">{opt.label}</span>
                         <span className="text-[10px] opacity-70">{opt.desc}</span>

@@ -183,7 +183,7 @@ export default function Landing() {
 
       {/* NAVBAR */}
       <nav className={`fixed top-0 inset-x-0 z-50 px-6 md:px-10 h-16 flex items-center justify-between transition-all ${scrolled ? "bg-background/94 backdrop-blur-xl border-b border-border" : ""}`}>
-        <div className="flex items-center gap-2.5 font-landing text-xl text-foreground">
+        <div className="flex items-center gap-2.5 font-display text-xl text-foreground">
           <img src="/favicon.svg" className="w-8 h-8" alt="Onboardly" />
           Onboardly
         </div>
@@ -224,7 +224,7 @@ export default function Landing() {
 
         <motion.h1
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="font-landing text-[clamp(36px,7vw,80px)] font-bold leading-[1.05] text-foreground max-w-[820px] mb-5 relative z-10"
+          className="font-display text-[clamp(36px,7vw,80px)] font-bold leading-[1.05] text-foreground max-w-[820px] mb-5 relative z-10"
         >
           Send one link.<br />Get everything you need to <em className="italic text-primary">start the project.</em>
         </motion.h1>
@@ -257,8 +257,9 @@ export default function Landing() {
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8 }}
           className="relative z-10 w-full max-w-[680px]"
         >
-          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.12)]">
-            <div className="bg-secondary border-b border-border h-10 flex items-center px-4 gap-1.5">
+          <div className="bg-card/80 backdrop-blur-3xl border border-border/80 rounded-2xl overflow-hidden shadow-[0_32px_80px_-10px_rgba(var(--primary),0.15)] ring-1 ring-border shadow-2xl relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+            <div className="bg-secondary/60 backdrop-blur-md border-b border-border/60 h-10 flex items-center px-4 gap-1.5 relative z-10">
               <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
               <div className="w-2.5 h-2.5 rounded-full bg-warning" />
               <div className="w-2.5 h-2.5 rounded-full bg-success" />
@@ -296,7 +297,7 @@ export default function Landing() {
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />Sound familiar?
           </div>
-          <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-10 max-w-[560px]">
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-10 max-w-[560px]">
             The old way is <em className="italic font-normal">costing you</em> time.
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -322,7 +323,7 @@ export default function Landing() {
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />How it works
           </div>
-          <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
             Up and running in <em className="italic font-normal">under 5 minutes.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[480px] mb-12">
@@ -334,7 +335,7 @@ export default function Landing() {
                 {i < HOW_IT_WORKS.length - 1 && (
                   <div className="hidden md:block absolute top-[2.2rem] left-[calc(100%+1px)] w-4 text-muted-foreground/30 text-lg z-10">→</div>
                 )}
-                <div className="font-landing text-[32px] font-bold text-primary/20 mb-3 leading-none">{step.step}</div>
+                <div className="font-display text-[32px] font-bold text-primary/20 mb-3 leading-none">{step.step}</div>
                 <div className="text-[15px] font-semibold text-foreground mb-1.5">{step.title}</div>
                 <div className="text-[13px] text-muted-foreground leading-relaxed">{step.text}</div>
               </div>
@@ -349,7 +350,7 @@ export default function Landing() {
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />Features
           </div>
-          <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
             Everything you need.<br /><em className="italic font-normal">Nothing you don't.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[480px] mb-12">
@@ -373,7 +374,7 @@ export default function Landing() {
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />After they submit
           </div>
-          <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
             You're ready to start.<br /><em className="italic font-normal">Immediately.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[480px] mb-12">
@@ -399,7 +400,7 @@ export default function Landing() {
             <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center justify-center gap-2">
               <span className="w-5 h-[1.5px] bg-primary rounded-full" />Pricing
             </div>
-            <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5">
+            <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5">
               Start free. <em className="italic font-normal">Upgrade when you're ready.</em>
             </h2>
             <p className="text-[15px] text-muted-foreground max-w-[440px] mx-auto">
@@ -412,11 +413,10 @@ export default function Landing() {
               const planKey = plan.name === "Free" ? "free" : plan.name === "Lifetime" ? "lifetime" : "pro";
               const isCurrent = currentPlan === planKey;
               return (
-                <div key={plan.name} className={`relative border rounded-[16px] p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg ${
-                  isCurrent ? "border-primary ring-2 ring-primary/30 bg-primary/[0.06]"
-                  : plan.highlight ? "border-primary bg-primary/[0.03] shadow-[0_0_40px_hsl(var(--accent-glow))]"
-                  : "border-border bg-background"
-                }`}>
+                <div key={plan.name} className={`relative border rounded-[16px] p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg ${isCurrent ? "border-primary ring-2 ring-primary/30 bg-primary/[0.06]"
+                    : plan.highlight ? "border-primary bg-primary/[0.03] shadow-[0_0_40px_hsl(var(--accent-glow))]"
+                      : "border-border bg-background"
+                  }`}>
                   {isCurrent && (
                     <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap">
                       ✓ Current Plan
@@ -430,7 +430,7 @@ export default function Landing() {
                   <div className="mb-5">
                     <h3 className="text-[15px] font-semibold text-foreground mb-1">{plan.name}</h3>
                     <div className="flex items-baseline gap-1">
-                      <span className="font-landing text-[40px] font-bold text-foreground">{plan.price}</span>
+                      <span className="font-display text-[40px] font-bold text-foreground">{plan.price}</span>
                       <span className="text-sm text-muted-foreground">{plan.period}</span>
                     </div>
                   </div>
@@ -444,11 +444,10 @@ export default function Landing() {
                   <button
                     onClick={() => handlePlanClick(plan.name)}
                     disabled={isCurrent || upgrading === plan.name}
-                    className={`w-full py-2.5 rounded-lg text-[13px] font-semibold text-center transition-all ${
-                      isCurrent ? "bg-primary/10 text-primary cursor-default"
-                      : plan.highlight ? "bg-primary text-primary-foreground hover:brightness-110"
-                      : "bg-secondary text-foreground border border-border hover:bg-muted"
-                    } disabled:opacity-70`}
+                    className={`w-full py-2.5 rounded-lg text-[13px] font-semibold text-center transition-all ${isCurrent ? "bg-primary/10 text-primary cursor-default"
+                        : plan.highlight ? "bg-primary text-primary-foreground hover:brightness-110"
+                          : "bg-secondary text-foreground border border-border hover:bg-muted"
+                      } disabled:opacity-70`}
                   >
                     {isCurrent ? "Current Plan" : upgrading === plan.name ? "Updating..." : plan.cta}
                   </button>
@@ -465,7 +464,7 @@ export default function Landing() {
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />What they say
           </div>
-          <h2 className="font-landing text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-12 max-w-[580px]">
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-12 max-w-[580px]">
             Designers who switched to <em className="italic font-normal">Onboardly</em>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
@@ -494,7 +493,7 @@ export default function Landing() {
             <span>✓ No credit card</span>
             <span>✓ Setup in under 5 minutes</span>
           </p>
-          <h2 className="font-landing text-[clamp(30px,5vw,54px)] font-bold leading-[1.1] text-foreground mb-3.5">
+          <h2 className="font-display text-[clamp(30px,5vw,54px)] font-bold leading-[1.1] text-foreground mb-3.5">
             Your next client deserves a <em className="italic text-primary">better</em> first impression.
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">

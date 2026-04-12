@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { FileDown, Copy, Check, MessageCircle } from "lucide-react";
-import type { ClientRow } from "@/pages/Clients";
+import { FileDown, Copy, Check, MessageCircle, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import type { ClientRow } from "@/types/client";
 
 interface OnboardingResponse {
   business_name:        string | null;
@@ -174,49 +174,59 @@ export default function ClientDetailDialog({ client, onClose, onUpdated }: Props
         <div className="p-6 sm:p-7">
 
           {/* Header */}
-          <div className="flex items-start justify-between mb-1">
+          <div className="flex items-start justify-between mb-2">
             {isEditing ? (
               <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
-                className="flex-1 font-display text-[20px] font-normal bg-surface-2 border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                className="flex-1 font-display text-[22px] font-normal bg-surface-2 border border-border rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-inner"
                 autoFocus />
             ) : (
-              <h3 className="font-display text-[22px] font-normal">{editName}</h3>
+              <motion.h3 layoutId={`client-name-${client.id}`} className="font-display text-[28px] text-foreground tracking-tight leading-none">
+                {editName}
+              </motion.h3>
             )}
-            <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-lg ml-3 shrink-0">✕</button>
+            <button onClick={onClose} 
+              className="p-1.5 rounded-full hover:bg-surface-2 text-muted-foreground hover:text-foreground transition-all ml-3 shrink-0">
+              <span className="text-xl">✕</span>
+            </button>
           </div>
 
           {isEditing ? (
-            <div className="mb-4 space-y-3">
-              <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)}
-                className="w-full text-[13px] bg-surface-2 border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Email (optional)" />
-              <div className="flex gap-2">
+            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="mb-6 space-y-3.5">
+              <div className="relative">
+                <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                  className="w-full text-[13.5px] bg-surface-2 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all pr-12"
+                  placeholder="Email (optional)" />
+              </div>
+              <div className="flex gap-2.5">
                 <button onClick={handleSave} disabled={isSaving}
-                  className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-primary text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50">
-                  {isSaving ? "Saving..." : "Save"}
+                  className="flex-[2] py-2.5 rounded-xl text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all disabled:opacity-50 shadow-[0_4px_12px_rgba(var(--primary),0.2)]">
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </button>
                 <button onClick={() => { setEditName(client.name); setEditEmail(client.email || ""); setIsEditing(false); }}
-                  className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all">
+                  className="flex-1 py-2.5 rounded-xl text-[13px] font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-all">
                   Cancel
                 </button>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${dynamicStatus.dot} animate-pulse`} />
-                <p className={`text-[12px] font-medium ${dynamicStatus.color}`}>{dynamicStatus.label}</p>
+            <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2.5 bg-surface-2 border border-border rounded-full pl-2 pr-3 py-1">
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${dynamicStatus.dot} opacity-75`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${dynamicStatus.dot}`}></span>
+                </span>
+                <p className={`text-[12px] font-semibold ${dynamicStatus.color} tracking-tight`}>{dynamicStatus.label}</p>
               </div>
               <div className="flex items-center gap-1.5">
                 {response && (
                   <button onClick={handleExportCsv}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all">
-                    <FileDown size={12}/> CSV
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-all">
+                    <FileDown size={13}/> CSV
                   </button>
                 )}
                 <button onClick={() => setIsEditing(true)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all">
-                  Edit
+                  className="px-3 py-1.5 rounded-lg text-[11.5px] font-semibold border border-border text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-all">
+                  Edit Profile
                 </button>
               </div>
             </div>
@@ -231,101 +241,153 @@ export default function ClientDetailDialog({ client, onClose, onUpdated }: Props
             <span className="text-sm font-semibold text-foreground">{pct}%</span>
           </div>
 
-          {/* Share link */}
-          <div className="bg-surface-2 border border-border rounded-xl p-4 mb-5">
-            <p className="text-[11px] font-medium text-muted-foreground mb-2">Onboarding link</p>
-            <p className="text-[11px] text-foreground font-mono break-all mb-3">{onboardingLink}</p>
-            <div className="flex gap-2">
+          <div className="bg-surface-2 border border-border rounded-2xl p-4 mb-6 shadow-sm">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Onboarding link</p>
+            <div className="bg-surface-3 border border-border rounded-xl px-3 py-2.5 mb-4 group ring-1 ring-transparent focus-within:ring-primary/20 transition-all">
+              <p className="text-[11.5px] text-foreground font-mono break-all leading-relaxed select-all">
+                {onboardingLink}
+              </p>
+            </div>
+            <div className="flex gap-2.5">
               <button onClick={copyLink}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12px] font-medium border transition-all ${
-                  copied ? "bg-success/10 border-success/30 text-success" : "border-border text-muted-foreground hover:text-foreground"
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold border transition-all shadow-sm ${
+                  copied ? "bg-success/10 border-success/30 text-success" : "bg-surface border-border text-muted-foreground hover:text-foreground hover:border-primary/20"
                 }`}>
-                {copied ? <Check size={13}/> : <Copy size={13}/>}
+                {copied ? <Check size={14}/> : <Copy size={14}/>}
                 {copied ? "Copied!" : "Copy Link"}
               </button>
               <a href={whatsappLink} target="_blank" rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all">
-                <MessageCircle size={13}/>
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold border border-border bg-surface text-muted-foreground hover:text-foreground hover:border-green-500/20 transition-all shadow-sm">
+                <MessageCircle size={14}/>
                 WhatsApp
               </a>
             </div>
           </div>
 
-          {/* Activity Timeline */}
-          <div className="mb-5">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Activity Timeline</p>
-            <div className="space-y-0">
+          <div className="mb-8">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-5">Activity Journey</p>
+            <div className="space-y-0 pl-1">
               {timeline.map((item, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  key={i} 
+                  className="flex items-start gap-4"
+                >
                   <div className="flex flex-col items-center">
-                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-[11px] shrink-0 transition-all ${
-                      item.done ? "border-primary bg-primary/10" : "border-border bg-surface-2"
+                    <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center text-[12px] shrink-0 transition-all ${
+                      item.done ? "border-primary bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.1)]" : "border-border bg-surface-2 grayscale"
                     }`}>
-                      {item.done ? item.icon : <span className="w-1.5 h-1.5 rounded-full bg-border block"/>}
+                      {item.done ? item.icon : <span className="w-2 h-2 rounded-full bg-border block"/>}
                     </div>
                     {i < timeline.length - 1 && (
-                      <div className={`w-px flex-1 min-h-[20px] mt-0.5 mb-0.5 ${item.done ? "bg-primary/20" : "bg-border"}`} />
+                      <div className={`w-0.5 flex-1 min-h-[25px] mt-1 mb-1 rounded-full ${item.time && timeline[i+1].time ? "bg-primary/30" : "bg-border/40"}`} />
                     )}
                   </div>
-                  <div className="pb-4">
-                    <p className={`text-[13px] font-medium ${item.done ? "text-foreground" : "text-muted-foreground/50"}`}>
+                  <div className="pb-6 pt-0.5">
+                    <p className={`text-[13.5px] font-semibold tracking-tight ${item.done ? "text-foreground" : "text-muted-foreground/40"}`}>
                       {item.label}
                     </p>
                     {item.time && (
-                      <p className="text-[11px] text-muted-foreground">{timeAgo(item.time)}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Clock size={10} className="text-muted-foreground/40" />
+                        <p className="text-[11px] text-muted-foreground italic font-medium">{timeAgo(item.time)}</p>
+                      </div>
                     )}
                     {!item.done && i === 1 && !response && (
-                      <p className="text-[11px] text-warning mt-0.5">Waiting for client to open link...</p>
+                      <div className="mt-2 inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-warning/10 border border-warning/20">
+                         <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse" />
+                         <p className="text-[10.5px] font-medium text-warning">Waiting for client interaction...</p>
+                      </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
 
-          {/* Responses */}
           <div>
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Form Responses</p>
+            <div className="flex items-center justify-between mb-5">
+               <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Form Responses</p>
+               {response && (
+                 <span className="text-[11px] font-medium text-primary px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                   {pct}% Captured
+                 </span>
+               )}
+            </div>
+            
             {loading ? (
-              <div className="text-center text-muted-foreground text-sm py-6">Loading responses...</div>
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-20 bg-surface-2 border border-border/50 rounded-2xl animate-pulse" />
+                ))}
+              </div>
             ) : !response ? (
-              <div className="text-center py-8 bg-surface-2 border border-border rounded-xl">
-                <div className="text-[32px] mb-2">⏳</div>
-                <p className="text-sm font-medium text-foreground mb-1">Waiting for client response</p>
-                <p className="text-[12px] text-muted-foreground">Most clients complete this within a few hours.</p>
-              </div>
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-10 px-6 bg-surface-2 border border-dashed border-border rounded-2xl">
+                <div className="w-14 h-14 rounded-2xl bg-surface-3 flex items-center justify-center text-3xl mx-auto mb-4 border border-border shadow-sm">⏳</div>
+                <h4 className="text-[15px] font-semibold text-foreground mb-1">Waiting for initial response</h4>
+                <p className="text-[12px] text-muted-foreground max-w-[260px] mx-auto leading-relaxed">Most clients start filling the form within 24 hours of opening the link.</p>
+              </motion.div>
             ) : (
-              <div className="space-y-2.5">
-                {FIELD_LABELS.map(({ key, label }) => {
-                  const val = response[key];
-                  const hasValue = Array.isArray(val) ? val.length > 0 : !!val;
-                  return (
-                    <div key={key} className={`border rounded-xl p-4 ${hasValue ? "border-primary/20 bg-primary/[0.02]" : "border-border"}`}>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[8px] shrink-0 ${
-                          hasValue ? "bg-primary border-primary text-primary-foreground" : "border-border"
-                        }`}>
-                          {hasValue && "✓"}
-                        </div>
-                        <span className="text-[12px] font-medium text-muted-foreground">{label}</span>
-                      </div>
-                      <div className="ml-6">
-                        {!hasValue ? (
-                          <span className="text-[12px] text-muted-foreground/50 italic">No response yet</span>
-                        ) : Array.isArray(val) ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {val.map(p => (
-                              <span key={p} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{p}</span>
-                            ))}
+              <motion.div layout className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {FIELD_LABELS.map(({ key, label }, i) => {
+                    const val = response[key];
+                    const hasValue = Array.isArray(val) ? val.length > 0 : !!val;
+                    return (
+                      <motion.div 
+                        key={key} 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className={`group border rounded-2xl p-5 transition-all duration-300 ${
+                          hasValue 
+                            ? "border-primary/15 bg-primary/[0.01] hover:bg-primary/[0.03] hover:border-primary/30" 
+                            : "border-border/60 bg-surface grayscale-[0.5] opacity-60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-5 h-5 rounded-lg border flex items-center justify-center shadow-sm transition-all ${
+                              hasValue ? "bg-primary border-primary text-primary-foreground" : "bg-surface-2 border-border"
+                            }`}>
+                              {hasValue ? <Check size={11} strokeWidth={3} /> : <div className="w-1 h-1 rounded-full bg-border" />}
+                            </div>
+                            <span className="text-[12.5px] font-bold text-foreground/80 tracking-tight">{label}</span>
                           </div>
-                        ) : (
-                          <p className="text-[13px] text-foreground">{val}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                          {hasValue && (
+                             <span className="text-[10px] font-bold text-primary/40 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Captured</span>
+                          )}
+                        </div>
+                        <div className="pl-7">
+                          {!hasValue ? (
+                            <span className="text-[12px] text-muted-foreground/40 italic">Waiting for client to provide details...</span>
+                          ) : Array.isArray(val) ? (
+                            <div className="flex flex-wrap gap-2">
+                              {val.map(p => (
+                                <motion.span 
+                                  whileHover={{ scale: 1.05 }}
+                                  key={p} 
+                                  className="text-[11.5px] px-3 py-1 rounded-xl bg-surface-2 text-foreground font-medium border border-border shadow-sm flex items-center gap-1.5"
+                                >
+                                  <div className="w-1 h-1 rounded-full bg-primary" />
+                                  {p}
+                                </motion.span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[13.5px] text-foreground font-medium leading-relaxed bg-surface-2/50 p-3 rounded-xl border border-border/40">
+                              {val}
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
             )}
           </div>
 

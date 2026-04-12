@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Search, Clock, CheckCircle, Users, ChevronDown, Trash2,
-  ArrowRight, Copy, ExternalLink, Bell, Plus, Eye,
+  ArrowRight, Copy, ExternalLink, Bell, Plus, Eye, Sparkles, Zap, Crown, X, Check,
 } from "lucide-react";
 import CreateClientDialog from "@/components/CreateClientDialog";
 import ClientDetailDialog from "@/components/ClientDetailDialog";
@@ -14,272 +15,133 @@ import {
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
-export interface ClientRow {
-  id:             string;
-  name:           string;
-  email:          string | null;
-  token:          string;
-  status:         "pending" | "completed";
-  created_at:     string;
-  progress:       number;
-  updated_at:     string | null;
-  link_opened_at: string | null;
-  client_state:   "not_started" | "in_progress" | "needs_followup" | "completed";
-}
+import { ClientRow } from "@/types/client";
+import { calcProgress, deriveState, formatRelativeTime, AVATAR_COLORS, INITIALS } from "@/lib/clientUtils";
+import { StateBadge } from "@/components/clients/StateBadge";
+import { GettingStarted } from "@/components/clients/GettingStarted";
+import { DemoClientCard } from "@/components/clients/DemoClientCard";
+import { ActivityFeed } from "@/components/clients/ActivityFeed";
 
 type SortKey = "name" | "date" | "progress";
+type Plan = "free" | "pro" | "lifetime";
 
-const AVATAR_COLORS = [
-  ["#7C6EF2","#9B8FF5"], ["#F59E0B","#F7B731"], ["#34D399","#10B981"],
-  ["#60A5FA","#3B82F6"], ["#F472B6","#EC4899"], ["#EF4444","#DC2626"], ["#8B5CF6","#7C3AED"],
-];
-const INITIALS = (n: string) => n.split(" ").map(x => x[0]).join("").toUpperCase().slice(0, 2);
-
-function calcProgress(r: any): number {
-  if (!r) return 0;
-  const fields = [
-    r.business_name, r.business_description, r.target_audience,
-    r.competitors, r.website_goal, r.budget, r.timeline,
-    r.pages_needed?.length > 0 ? "x" : "",
-  ];
-  return Math.round(fields.filter(Boolean).length / 8 * 100);
-}
-
-function deriveState(status: string, progress: number, updatedAt: string | null, linkOpenedAt?: string | null): ClientRow["client_state"] {
-  if (status === "completed") return "completed";
-  if (progress === 0 && !linkOpenedAt) return "not_started";
-  if (updatedAt) {
-    const hoursAgo = (Date.now() - new Date(updatedAt).getTime()) / 36e5;
-    if (hoursAgo > 48) return "needs_followup";
-  }
-  return "in_progress";
-}
-
-function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return "";
-  const diff  = Date.now() - new Date(dateStr).getTime();
-  const mins  = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  if (mins < 1)   return "Just now";
-  if (mins < 60)  return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7)   return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
-function StateBadge({ state }: { state: ClientRow["client_state"] }) {
+// ── Plan Badge ────────────────────────────────────────────────────────────────
+function PlanBadge({ plan }: { plan: Plan }) {
   const config = {
-    not_started:    { label: "Link Not Opened",     cls: "bg-zinc-800/60 text-zinc-400 border-zinc-700/60",          dot: "bg-zinc-500" },
-    in_progress:    { label: "Filling Form",        cls: "bg-amber-500/10 text-amber-400 border-amber-500/25",       dot: "bg-amber-400 animate-pulse" },
-    needs_followup: { label: "Needs Follow-up",     cls: "bg-red-500/10 text-red-400 border-red-500/25",             dot: "bg-red-400" },
-    completed:      { label: "Ready to Start",      cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25", dot: "bg-emerald-400" },
-  }[state];
+    free: { label: "Free", icon: <Sparkles size={11} />, cls: "bg-muted/40 text-muted-foreground border-border" },
+    pro: { label: "Pro", icon: <Zap size={11} />, cls: "bg-primary/10 text-primary border-primary/25" },
+    lifetime: { label: "Lifetime", icon: <Crown size={11} />, cls: "bg-amber-500/10 text-amber-400 border-amber-500/25" },
+  }[plan] ?? { label: "Free", icon: <Sparkles size={11} />, cls: "bg-muted/40 text-muted-foreground border-border" };
+
   return (
-    <span className={`inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full font-semibold border whitespace-nowrap ${config.cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full border ${config.cls}`}>
+      {config.icon}
       {config.label}
     </span>
-  );
-}
-
-// ── Getting Started Checklist ──────────────────────────────────────────────────
-function GettingStarted({ clients, onCreateClient }: { clients: ClientRow[]; onCreateClient: () => void }) {
-  const hasClient    = clients.length > 0;
-  const hasSentLink  = clients.some(c => c.link_opened_at);
-  const hasResponse  = clients.some(c => c.progress > 0 || c.client_state === "completed");
-  const steps = [
-    { label: "Create your first client",     done: hasClient,   action: onCreateClient,  cta: "Create Client" },
-    { label: "Send the onboarding link",     done: hasSentLink, action: null,             cta: "Copy from client card below" },
-    { label: "Receive their first response", done: hasResponse, action: null,             cta: "Waiting..." },
-  ];
-  const completedCount = steps.filter(s => s.done).length;
-  if (completedCount === 3) return null;
-
-  return (
-    <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-[14px] font-semibold text-foreground">Get started with Onboardly</h3>
-          <p className="text-[12px] text-muted-foreground mt-0.5">{completedCount}/3 steps completed</p>
-        </div>
-        <div className="flex items-center gap-1">
-          {steps.map((s, i) => (
-            <div key={i} className={`w-8 h-1.5 rounded-full transition-all ${s.done ? "bg-primary" : "bg-border"}`} />
-          ))}
-        </div>
-      </div>
-      <div className="space-y-2.5">
-        {steps.map((s, i) => (
-          <div key={i} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-            s.done
-              ? "border-primary/15 bg-primary/[0.03] opacity-60"
-              : i === completedCount
-                ? "border-primary/30 bg-primary/[0.05]"
-                : "border-border bg-surface/50 opacity-40"
-          }`}>
-            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-[10px] font-bold transition-all ${
-              s.done ? "bg-primary border-primary text-primary-foreground" : "border-border text-muted-foreground"
-            }`}>
-              {s.done ? "✓" : i + 1}
-            </div>
-            <span className={`flex-1 text-[13px] font-medium ${s.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
-              {s.label}
-            </span>
-            {!s.done && i === completedCount && s.action && (
-              <button onClick={s.action}
-                className="text-[11px] font-semibold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg hover:brightness-110 transition-all shrink-0">
-                {s.cta}
-              </button>
-            )}
-            {!s.done && i === completedCount && !s.action && (
-              <span className="text-[11px] text-muted-foreground">{s.cta}</span>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Demo Client Card ───────────────────────────────────────────────────────────
-function DemoClientCard() {
-  return (
-    <div className="border-2 border-dashed border-primary/25 rounded-2xl px-4 py-4 bg-primary/[0.02] mb-3">
-      <div className="flex items-center gap-3.5">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shrink-0"
-          style={{ background: "linear-gradient(135deg, #7C6EF2, #9B8FF5)" }}>
-          DM
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[14px] font-semibold text-foreground">Demo Client</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold">Example</span>
-          </div>
-          <p className="text-[11.5px] text-muted-foreground">See what your client's onboarding looks like</p>
-        </div>
-        <a href="/onboarding/demo" target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-primary border border-primary/30 px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-all shrink-0">
-          <Eye size={11} /> Preview Form
-        </a>
-      </div>
-    </div>
-  );
-}
-
-// ── Activity Feed ──────────────────────────────────────────────────────────────
-function ActivityFeed({ clients }: { clients: ClientRow[] }) {
-  const activities = clients
-    .flatMap(c => {
-      const items = [];
-      if (c.client_state === "completed") {
-        items.push({ time: c.updated_at, text: `${c.name} completed their onboarding`, icon: "✅", color: "text-emerald-400" });
-      } else if (c.client_state === "in_progress") {
-        items.push({ time: c.updated_at, text: `${c.name} started filling the form`, icon: "✏️", color: "text-amber-400" });
-      } else if (c.link_opened_at) {
-        items.push({ time: c.link_opened_at, text: `${c.name} opened the onboarding link`, icon: "👀", color: "text-blue-400" });
-      } else {
-        items.push({ time: c.created_at, text: `Client ${c.name} created`, icon: "➕", color: "text-primary" });
-      }
-      return items;
-    })
-    .filter(a => a.time)
-    .sort((a, b) => new Date(b.time!).getTime() - new Date(a.time!).getTime())
-    .slice(0, 5);
-
-  if (activities.length === 0) return null;
-
-  return (
-    <div className="bg-surface border border-border rounded-2xl p-5 mb-6">
-      <h3 className="text-[13px] font-semibold text-foreground mb-3 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-        Recent Activity
-      </h3>
-      <div className="space-y-2.5">
-        {activities.map((a, i) => (
-          <div key={i} className="flex items-center gap-2.5">
-            <span className="text-[13px]">{a.icon}</span>
-            <span className="text-[12px] text-muted-foreground flex-1">{a.text}</span>
-            <span className="text-[10px] text-muted-foreground/40 shrink-0">{formatRelativeTime(a.time)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function Clients() {
   const { user, signOut, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [clients,        setClients]        = useState<ClientRow[]>([]);
-  const [loading,        setLoading]        = useState(true);
-  const [showCreate,     setShowCreate]     = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
-  const [deleteTarget,   setDeleteTarget]   = useState<ClientRow | null>(null);
-  const [deleting,       setDeleting]       = useState(false);
-  const [searchQuery,    setSearchQuery]    = useState("");
-  const [statusFilter,   setStatusFilter]   = useState<"all"|"not_started"|"in_progress"|"needs_followup"|"completed">("all");
-  const [sortKey,        setSortKey]        = useState<SortKey>("date");
-  const [sortAsc,        setSortAsc]        = useState(false);
-  const [copiedId,       setCopiedId]       = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ClientRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "not_started" | "in_progress" | "needs_followup" | "completed">("all");
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortAsc, setSortAsc] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<Plan>("free");
+  const [showPricing, setShowPricing] = useState(false);
+  const [upgrading, setUpgrading] = useState<string | null>(null);
 
-  const fetchClients = useCallback(async () => {
+  // Fetch current plan
+  useEffect(() => {
     if (!user) return;
-    try {
+    supabase
+      .from("profiles")
+      .select("plan")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.plan) setCurrentPlan(data.plan as Plan);
+      });
+  }, [user]);
+
+  const handlePlanClick = async (planName: string) => {
+    if (!user) return;
+    const planKey = planName === "Free" ? "free" : planName === "Lifetime" ? "lifetime" : "pro";
+    setUpgrading(planName);
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ user_id: user.id, plan: planKey }, { onConflict: "user_id" });
+    setUpgrading(null);
+    if (error) {
+      toast.error("Failed to update plan. Please try again.");
+    } else {
+      setCurrentPlan(planKey as Plan);
+      toast.success(planName === "Free" ? "Switched to Free plan" : `🎉 Upgraded to ${planName}!`);
+      if (planName !== "Free") setShowPricing(false);
+    }
+  };
+
+  const { data: clients = [], isLoading: loading } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       const { data: clientsData, error } = await supabase
         .from("clients")
-        .select("id, name, email, token, status, created_at, link_opened_at")
+        .select(`
+          id, name, email, token, status, created_at, link_opened_at,
+          onboarding_responses (
+            client_id, business_name, business_description, target_audience,
+            competitors, website_goal, pages_needed, budget, timeline, updated_at
+          )
+        `)
         .order("created_at", { ascending: false });
-      if (error) throw error;
 
-      const ids = (clientsData ?? []).map(c => c.id);
-      const { data: responses } = ids.length > 0
-        ? await supabase
-            .from("onboarding_responses")
-            .select("client_id, business_name, business_description, target_audience, competitors, website_goal, pages_needed, budget, timeline, updated_at")
-            .in("client_id", ids)
-        : { data: [] };
+      if (error) { toast.error("Failed to load clients."); throw error; }
 
-      const responseMap = new Map((responses ?? []).map(r => [r.client_id, r]));
-
-      setClients((clientsData ?? []).map(c => {
-        const r         = responseMap.get(c.id) ?? null;
-        const progress  = calcProgress(r);
+      return (clientsData ?? []).map((c: any) => {
+        const r = Array.isArray(c.onboarding_responses) ? c.onboarding_responses[0] : c.onboarding_responses;
+        const progress = calcProgress(r);
         const updatedAt = r?.updated_at ?? null;
         return {
           ...c,
-          status:         (c.status === "completed" ? "completed" : "pending") as "pending"|"completed",
+          status: (c.status === "completed" ? "completed" : "pending") as "pending" | "completed",
           progress,
-          updated_at:     updatedAt,
+          updated_at: updatedAt,
           link_opened_at: c.link_opened_at ?? null,
-          client_state:   deriveState(c.status, progress, updatedAt, c.link_opened_at),
+          client_state: deriveState(c.status, progress, updatedAt, c.link_opened_at),
         };
-      }));
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load clients.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+      }) as ClientRow[];
+    },
+    enabled: !!user,
+  });
 
-  useEffect(() => { fetchClients(); }, [fetchClients]);
-
+  // Realtime subscription
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel("dashboard-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "onboarding_responses" }, () => fetchClients())
-      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => fetchClients())
+      .on("postgres_changes", { event: "*", schema: "public", table: "onboarding_responses" }, () => {
+        queryClient.invalidateQueries({ queryKey: ['clients', user.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, () => {
+        queryClient.invalidateQueries({ queryKey: ['clients', user.id] });
+      })
       .subscribe();
-    const poll = setInterval(() => fetchClients(), 15000);
-    return () => { supabase.removeChannel(channel); clearInterval(poll); };
-  }, [user, fetchClients]);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
 
   if (authLoading) return <div className="flex items-center justify-center h-screen text-muted-foreground text-sm">Loading...</div>;
-  if (!user)       return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/auth" replace />;
 
   const copyLink = (token: string, clientId: string) => {
     const url = `${window.location.origin}/onboarding/${token}`;
@@ -291,8 +153,8 @@ export default function Clients() {
   };
 
   const sendWhatsApp = (token: string, name: string) => {
-    const url   = `${window.location.origin}/onboarding/${token}`;
-    const text  = encodeURIComponent(`Hi! Please fill out your onboarding form here: ${url}`);
+    const url = `${window.location.origin}/onboarding/${token}`;
+    const text = encodeURIComponent(`Hi! Please fill out your onboarding form here: ${url}`);
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
@@ -303,7 +165,7 @@ export default function Clients() {
     if (error) toast.error("Failed to delete client.");
     else {
       toast.success("Client deleted.");
-      setClients(prev => prev.filter(c => c.id !== deleteTarget.id));
+      queryClient.invalidateQueries({ queryKey: ['clients', user?.id] });
       if (selectedClient?.id === deleteTarget.id) setSelectedClient(null);
     }
     setDeleteTarget(null);
@@ -324,21 +186,19 @@ export default function Clients() {
     })
     .sort((a, b) => {
       let cmp = 0;
-      if (sortKey === "name")     cmp = a.name.localeCompare(b.name);
-      if (sortKey === "date")     cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortKey === "name") cmp = a.name.localeCompare(b.name);
+      if (sortKey === "date") cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       if (sortKey === "progress") cmp = a.progress - b.progress;
       return sortAsc ? cmp : -cmp;
     });
 
-  const totalClients       = clients.length;
-  const completedCount     = clients.filter(c => c.client_state === "completed").length;
-  const inProgressCount    = clients.filter(c => c.client_state === "in_progress").length;
+  const totalClients = clients.length;
+  const completedCount = clients.filter(c => c.client_state === "completed").length;
+  const inProgressCount = clients.filter(c => c.client_state === "in_progress").length;
   const needsFollowupCount = clients.filter(c => c.client_state === "needs_followup").length;
-  const avgCompletion      = totalClients > 0
+  const avgCompletion = totalClients > 0
     ? Math.round(clients.reduce((s, c) => s + c.progress, 0) / totalClients)
     : 0;
-
-  const userName = user.user_metadata?.full_name?.split(" ")[0] || "there";
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,15 +210,28 @@ export default function Clients() {
             <img src="/favicon.svg" className="w-8 h-8" alt="Onboardly" />
             <span className="font-display text-xl text-foreground tracking-tight">Onboardly</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Plan badge */}
+            <a href="/#pricing" className="hidden sm:block hover:opacity-80 transition-opacity">
+              <PlanBadge plan={currentPlan} />
+            </a>
+            {/* User pill */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2 border border-border">
               <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-primary-foreground">
                 {(user.user_metadata?.full_name || user.email || "U")[0].toUpperCase()}
               </div>
               <span className="text-xs text-muted-foreground">
-                Welcome, {user.user_metadata?.full_name?.split(" ")[0] || user.email} 👋
+                {user.user_metadata?.full_name?.split(" ")[0] || user.email}
               </span>
             </div>
+            {/* Upgrade button — only for free users */}
+            {currentPlan === "free" && (
+              <button
+                onClick={() => setShowPricing(true)}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-primary/10 text-primary border border-primary/25 hover:bg-primary/15 transition-all">
+                <Zap size={11} /> Upgrade
+              </button>
+            )}
             <button onClick={signOut}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-lg hover:bg-surface-2 border border-transparent hover:border-border">
               Sign out
@@ -393,6 +266,23 @@ export default function Clients() {
           </button>
         </div>
 
+        {/* ── FREE PLAN LIMIT BANNER ── */}
+        {currentPlan === "free" && clients.length >= 2 && (
+          <div className="mb-5 flex items-center justify-between gap-3 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <Zap size={15} className="text-amber-400 shrink-0" />
+              <p className="text-[13px] text-foreground">
+                Free plan limit reached — <span className="text-amber-400 font-semibold">2 active clients</span>. Upgrade to add unlimited clients.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPricing(true)}
+              className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all whitespace-nowrap">
+              Upgrade →
+            </button>
+          </div>
+        )}
+
         {/* ── GETTING STARTED ── */}
         <GettingStarted clients={clients} onCreateClient={() => setShowCreate(true)} />
 
@@ -400,10 +290,10 @@ export default function Clients() {
         {clients.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
-              { icon: <Users size={15} className="text-primary"/>,             label: "Total",       value: totalClients,    bg: "bg-primary/5 border-primary/15" },
-              { icon: <ArrowRight size={15} className="text-amber-400"/>,      label: "Avg Progress",value: `${avgCompletion}%`, bg: "bg-amber-500/5 border-amber-500/15" },
-              { icon: <Clock size={15} className="text-blue-400"/>,            label: "In Progress", value: inProgressCount, bg: "bg-blue-500/5 border-blue-500/15" },
-              { icon: <CheckCircle size={15} className="text-emerald-400"/>,   label: "Completed",   value: completedCount,  bg: "bg-emerald-500/5 border-emerald-500/15" },
+              { icon: <Users size={15} className="text-primary" />, label: "Total", value: totalClients, bg: "bg-primary/5 border-primary/15" },
+              { icon: <ArrowRight size={15} className="text-amber-400" />, label: "Avg Progress", value: `${avgCompletion}%`, bg: "bg-amber-500/5 border-amber-500/15" },
+              { icon: <Clock size={15} className="text-blue-400" />, label: "In Progress", value: inProgressCount, bg: "bg-blue-500/5 border-blue-500/15" },
+              { icon: <CheckCircle size={15} className="text-emerald-400" />, label: "Completed", value: completedCount, bg: "bg-emerald-500/5 border-emerald-500/15" },
             ].map(s => (
               <div key={s.label} className={`border rounded-2xl p-4 ${s.bg}`}>
                 <div className="flex items-center justify-between mb-2.5">
@@ -426,11 +316,10 @@ export default function Clients() {
               <h2 className="font-display text-[18px] text-foreground">Your Clients</h2>
               <button onClick={() => setShowCreate(true)}
                 className="sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold bg-primary text-primary-foreground">
-                <Plus size={12}/> New
+                <Plus size={12} /> New
               </button>
             </div>
 
-            {/* Search + Sort */}
             <div className="flex items-center gap-2 mb-3">
               <div className="relative flex-1">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -442,40 +331,34 @@ export default function Clients() {
                 />
               </div>
               <div className="flex items-center gap-1.5">
-                {(["name","date","progress"] as SortKey[]).map(key => (
+                {(["name", "date", "progress"] as SortKey[]).map(key => (
                   <button key={key} onClick={() => handleSort(key)}
-                    className={`px-3 py-2 rounded-lg text-[11px] font-medium border transition-all hidden sm:flex items-center gap-1 ${
-                      sortKey === key
-                        ? "bg-primary/10 border-primary/30 text-primary"
-                        : "bg-surface border-border text-muted-foreground hover:text-foreground"
-                    }`}>
+                    className={`px-3 py-2 rounded-lg text-[11px] font-medium border transition-all hidden sm:flex items-center gap-1 ${sortKey === key ? "bg-primary/10 border-primary/30 text-primary" : "bg-surface border-border text-muted-foreground hover:text-foreground"
+                      }`}>
                     {key.charAt(0).toUpperCase() + key.slice(1)}
-                    {sortKey === key && <ChevronDown size={10} className={`transition-transform ${sortAsc ? "rotate-180" : ""}`}/>}
+                    {sortKey === key && <ChevronDown size={10} className={`transition-transform ${sortAsc ? "rotate-180" : ""}`} />}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Filter tabs */}
             <div className="flex items-center gap-1.5 mb-5 overflow-x-auto pb-1">
               {([
-                { key: "all",            label: "All" },
-                { key: "not_started",    label: "Not Opened" },
-                { key: "in_progress",    label: "Filling Form" },
+                { key: "all", label: "All" },
+                { key: "not_started", label: "Not Opened" },
+                { key: "in_progress", label: "Filling Form" },
                 { key: "needs_followup", label: "Follow-up" },
-                { key: "completed",      label: "Ready" },
+                { key: "completed", label: "Ready" },
               ] as const).map(f => (
                 <button key={f.key} onClick={() => setStatusFilter(f.key)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${
-                    statusFilter === f.key
-                      ? "bg-primary text-primary-foreground border-primary shadow-[0_2px_8px_hsl(var(--accent-glow))]"
-                      : "border-border text-muted-foreground hover:text-foreground bg-surface"
-                  }`}>
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap flex-shrink-0 ${statusFilter === f.key
+                    ? "bg-primary text-primary-foreground border-primary shadow-[0_2px_8px_hsl(var(--accent-glow))]"
+                    : "border-border text-muted-foreground hover:text-foreground bg-surface"
+                    }`}>
                   {f.label}
                   {f.key !== "all" && (
-                    <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-                      statusFilter === f.key ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/10 text-muted-foreground"
-                    }`}>
+                    <span className={`ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${statusFilter === f.key ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted-foreground/10 text-muted-foreground"
+                      }`}>
                       {clients.filter(c => c.client_state === f.key).length}
                     </span>
                   )}
@@ -487,153 +370,122 @@ export default function Clients() {
 
         {/* ── CLIENT CARDS ── */}
         {loading ? (
-          <div className="space-y-3">
-            {[1,2,3].map(i => (
-              <div key={i} className="bg-surface border border-border rounded-2xl p-4 animate-pulse">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-muted-foreground/10" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3 w-full max-w-sm">
+                  <div className="w-10 h-10 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3.5 bg-muted-foreground/10 rounded w-1/3" />
-                    <div className="h-3 bg-muted-foreground/10 rounded w-1/2" />
+                    <div className="h-4 bg-muted-foreground/10 rounded-md w-3/4 animate-pulse" />
+                    <div className="h-3 bg-muted-foreground/10 rounded-md w-1/2 animate-pulse" />
                   </div>
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
         ) : clients.length === 0 ? (
-          // Empty state
-          <div className="text-center py-12 px-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12 px-4">
             <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-3xl mx-auto mb-5">📋</div>
-            <h3 className="font-display text-2xl text-foreground mb-2">No clients onboarded yet.</h3>
+            <h3 className="font-display text-2xl text-foreground mb-2">No clients yet</h3>
             <p className="text-sm text-muted-foreground mb-8 max-w-[340px] mx-auto leading-relaxed">
-              Create your first client and send them an onboarding link. They'll fill everything you need in minutes.
+              Create your first client and send them an onboarding link in under 2 minutes.
             </p>
             <button onClick={() => setShowCreate(true)}
-              className="px-6 py-3 rounded-xl text-[14px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all hover:-translate-y-0.5 shadow-[0_4px_20px_hsl(var(--accent-glow))] mb-6">
-              Create your first onboarding flow →
+              className="group px-6 py-3 rounded-xl text-[14px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all hover:-translate-y-0.5 shadow-[0_4px_20px_hsl(var(--accent-glow))] flex items-center justify-center gap-2 mx-auto mb-4">
+              Create your first client <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
-            <p className="text-[11px] text-muted-foreground/50 mb-8">Takes 2 minutes · Free forever for 2 clients</p>
-            {/* Demo client */}
+            <p className="text-[11px] text-muted-foreground/50 mb-10">Takes 2 minutes · No login needed for your client</p>
             <div className="max-w-[560px] mx-auto text-left">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">See how it works</p>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">See how it looks</p>
               <DemoClientCard />
             </div>
-          </div>
+          </motion.div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-3xl mb-3">🔍</div>
-            <p className="text-sm text-muted-foreground">No clients match your search.</p>
-          </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
+            <p className="text-sm text-muted-foreground">No clients match your search or filter.</p>
+          </motion.div>
         ) : (
-          <div className="space-y-2.5">
-            {filtered.map((client, i) => {
-              const [color1, color2] = AVATAR_COLORS[i % AVATAR_COLORS.length];
-              const isCopied = copiedId === client.id;
-              return (
-                <div key={client.id}
-                  className="group bg-surface border border-border rounded-2xl transition-all duration-200 overflow-hidden hover:border-primary/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]">
+          <motion.div layout className="space-y-2.5">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((client, i) => {
+                const [color1, color2] = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                const isCopied = copiedId === client.id;
+                return (
+                  <motion.div layout key={client.id}
+                    initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                    className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all">
 
-                  {/* Main row — clickable */}
-                  <div className="flex items-center gap-3.5 px-4 py-4 cursor-pointer"
-                    onClick={() => setSelectedClient(client)}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shrink-0 shadow-sm"
-                      style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
-                      {INITIALS(client.name)}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className="text-[14px] font-semibold text-foreground group-hover:text-primary transition-colors">
-                          {client.name}
-                        </span>
-                        <StateBadge state={client.client_state} />
+                    <div className="flex items-center gap-3.5 px-4 py-4 cursor-pointer" onClick={() => setSelectedClient(client)}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shrink-0 shadow-sm"
+                        style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+                        {INITIALS(client.name)}
                       </div>
-                      <p className="text-[11.5px] text-muted-foreground">
-                        {client.email || "No email"} · Added {formatRelativeTime(client.created_at)}
-                      </p>
-                    </div>
-
-                    {/* Progress */}
-                    <div className="w-[120px] hidden sm:block shrink-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {client.client_state === "not_started" ? "Not opened" :
-                           client.client_state === "completed" ? "Complete" :
-                           client.client_state === "needs_followup" ? "Stalled" : "In progress"}
-                        </span>
-                        <span className="text-[11px] font-semibold text-foreground">{client.progress}%</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-[14px] font-semibold text-foreground group-hover:text-primary transition-colors">{client.name}</span>
+                          <StateBadge state={client.client_state} />
+                        </div>
+                        <p className="text-[11.5px] text-muted-foreground">
+                          {client.email || "No email"} · Added {formatRelativeTime(client.created_at)}
+                        </p>
                       </div>
-                      <div className="h-1.5 bg-border rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all duration-700 ${
-                          client.client_state === "completed" ? "bg-emerald-400"
-                          : client.client_state === "needs_followup" ? "bg-red-400"
-                          : "bg-primary"
-                        }`} style={{ width: `${client.progress}%` }}/>
+                      <div className="w-[120px] hidden sm:block shrink-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-muted-foreground/60">
+                            {client.client_state === "not_started" ? "Not opened"
+                              : client.client_state === "completed" ? "Complete"
+                                : client.client_state === "needs_followup" ? "Stalled"
+                                  : "In progress"}
+                          </span>
+                          <span className="text-[11px] font-semibold text-foreground">{client.progress}%</span>
+                        </div>
+                        <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full transition-all duration-700 ${client.client_state === "completed" ? "bg-emerald-400"
+                            : client.client_state === "needs_followup" ? "bg-red-400"
+                              : "bg-primary"
+                            }`} style={{ width: `${client.progress}%` }} />
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Delete */}
-                    <div onClick={e => e.stopPropagation()}>
-                      <button onClick={() => setDeleteTarget(client)}
-                        className="p-2 rounded-lg border border-transparent text-muted-foreground/30 hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/5 transition-all opacity-0 group-hover:opacity-100 ml-1">
-                        <Trash2 size={13}/>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Action bar — always visible for not_started and needs_followup */}
-                  {(client.client_state === "not_started" || client.client_state === "needs_followup") && (
-                    <div className={`flex items-center gap-2 px-4 py-2.5 border-t ${
-                      client.client_state === "needs_followup"
-                        ? "border-red-500/15 bg-red-500/[0.03]"
-                        : "border-border bg-surface-2/50"
-                    }`}>
-                      <span className="text-[11px] text-muted-foreground mr-auto">
-                        {client.client_state === "needs_followup"
-                          ? "⚠️ No activity in 48h — send a reminder"
-                          : "Client hasn't opened the link yet"}
-                      </span>
-                      <button
-                        onClick={e => { e.stopPropagation(); copyLink(client.token, client.id); }}
-                        className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all ${
-                          isCopied
-                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                            : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
-                        }`}>
-                        <Copy size={11}/>
-                        {isCopied ? "Copied!" : "Copy Link"}
-                      </button>
-                      <button
-                        onClick={e => { e.stopPropagation(); sendWhatsApp(client.token, client.name); }}
-                        className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all">
-                        <ExternalLink size={11}/>
-                        WhatsApp
-                      </button>
-                      {client.client_state === "needs_followup" && (
-                        <button
-                          onClick={e => { e.stopPropagation(); copyLink(client.token, client.id); toast.info("Copy the link and send it as a reminder!"); }}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-red-400/30 text-red-400 hover:bg-red-400/5 transition-all">
-                          <Bell size={11}/>
-                          Remind
+                      <div onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setDeleteTarget(client)}
+                          className="p-2 rounded-lg border border-transparent text-muted-foreground/30 hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/5 transition-all opacity-0 group-hover:opacity-100 ml-1">
+                          <Trash2 size={13} />
                         </button>
-                      )}
+                      </div>
                     </div>
-                  )}
 
-                  {/* Completed action bar */}
-                  {client.client_state === "completed" && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-t border-emerald-500/15 bg-emerald-500/[0.02]">
-                      <span className="text-[11px] text-emerald-400 mr-auto">✅ Brief complete — ready to start the project</span>
-                      <button onClick={e => { e.stopPropagation(); setSelectedClient(client); }}
-                        className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-all">
-                        <Eye size={11}/> View Brief
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {(client.client_state === "not_started" || client.client_state === "needs_followup") && (
+                      <div className={`flex items-center gap-2 px-4 py-2.5 border-t ${client.client_state === "needs_followup" ? "border-red-500/15 bg-red-500/[0.03]" : "border-border bg-surface-2/50"
+                        }`}>
+                        <span className="text-[11px] text-muted-foreground mr-auto">
+                          {client.client_state === "needs_followup" ? "⚠️ No activity in 48h — send a reminder" : "Client hasn't opened the link yet"}
+                        </span>
+                        <button onClick={e => { e.stopPropagation(); copyLink(client.token, client.id); }}
+                          className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border transition-all ${isCopied ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
+                            }`}>
+                          <Copy size={11} /> {isCopied ? "Copied!" : "Copy Link"}
+                        </button>
+                        <button onClick={e => { e.stopPropagation(); sendWhatsApp(client.token, client.name); }}
+                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all">
+                          <ExternalLink size={11} /> WhatsApp
+                        </button>
+                      </div>
+                    )}
+
+                    {client.client_state === "completed" && (
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-t border-emerald-500/15 bg-emerald-500/[0.02]">
+                        <span className="text-[11px] text-emerald-400 mr-auto">✅ Brief complete — ready to start the project</span>
+                        <button onClick={e => { e.stopPropagation(); setSelectedClient(client); }}
+                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-all">
+                          <Eye size={11} /> View Brief
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
         )}
 
         {clients.length > 0 && (
@@ -643,17 +495,16 @@ export default function Clients() {
         )}
       </div>
 
-      {/* ── DIALOGS ── */}
       {showCreate && (
         <CreateClientDialog userId={user.id}
           onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); fetchClients(); }}/>
+          onCreated={() => { setShowCreate(false); queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); }} />
       )}
 
       {selectedClient && (
         <ClientDetailDialog client={selectedClient}
           onClose={() => setSelectedClient(null)}
-          onUpdated={() => { fetchClients(); setSelectedClient(null); }}/>
+          onUpdated={() => { queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); setSelectedClient(null); }} />
       )}
 
       <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
@@ -673,6 +524,131 @@ export default function Clients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── PRICING MODAL ── */}
+      <AnimatePresence>
+        {showPricing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+            onClick={() => setShowPricing(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              transition={{ type: "spring", damping: 22, stiffness: 300 }}
+              className="bg-surface border border-border rounded-[20px] w-full max-w-[820px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.3)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between p-6 pb-0">
+                <div>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-1">Choose Your Plan</p>
+                  <h2 className="font-display text-[26px] text-foreground tracking-tight leading-tight">
+                    Start free. <em className="italic">Upgrade when ready.</em>
+                  </h2>
+                  <p className="text-[13px] text-muted-foreground mt-1">No pressure — the free plan is genuinely useful.</p>
+                </div>
+                <button
+                  onClick={() => setShowPricing(false)}
+                  className="p-2 rounded-xl hover:bg-surface-2 text-muted-foreground hover:text-foreground transition-all mt-1">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Plans */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-6">
+                {[
+                  {
+                    name: "Free",
+                    price: "$0",
+                    period: "forever",
+                    features: ["2 active clients", "1 template", "Onboardly branding"],
+                    cta: "Stay on Free",
+                    highlight: false,
+                  },
+                  {
+                    name: "Pro",
+                    price: "$9",
+                    period: "/month",
+                    features: ["Unlimited clients", "Unlimited templates", "File uploads", "Completion tracking", "Remove branding"],
+                    cta: "Go Pro",
+                    highlight: true,
+                    badge: "Most popular",
+                  },
+                  {
+                    name: "Lifetime",
+                    price: "$79",
+                    period: "one-time",
+                    badge: "Best value",
+                    features: ["All Pro features", "Lifetime access", "Priority support", "Pay once, use forever"],
+                    cta: "Get Lifetime Access",
+                    highlight: false,
+                  },
+                ].map((plan) => {
+                  const planKey = plan.name === "Free" ? "free" : plan.name === "Lifetime" ? "lifetime" : "pro";
+                  const isCurrent = currentPlan === planKey;
+                  return (
+                    <div key={plan.name} className={`relative border rounded-[16px] p-5 flex flex-col transition-all ${isCurrent
+                        ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]"
+                        : plan.highlight
+                          ? "border-primary bg-primary/[0.03] shadow-[0_0_30px_hsl(var(--accent-glow))]"
+                          : "border-border bg-surface-2"
+                      }`}>
+                      {isCurrent && (
+                        <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full">
+                          ✓ Current Plan
+                        </div>
+                      )}
+                      {plan.badge && !isCurrent && (
+                        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full border whitespace-nowrap ${plan.name === "Lifetime"
+                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                            : "bg-primary/10 text-primary border-primary/25"
+                          }`}>
+                          {plan.badge}
+                        </div>
+                      )}
+                      <div className="mb-4">
+                        <h3 className="text-[14px] font-semibold text-foreground mb-1">{plan.name}</h3>
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-display text-[36px] text-foreground leading-none">{plan.price}</span>
+                          <span className="text-[12px] text-muted-foreground">{plan.period}</span>
+                        </div>
+                      </div>
+                      <ul className="space-y-2 mb-5 flex-1">
+                        {plan.features.map(f => (
+                          <li key={f} className="flex items-center gap-2 text-[12px] text-muted-foreground">
+                            <Check size={12} className="text-primary shrink-0" />{f}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        onClick={() => handlePlanClick(plan.name)}
+                        disabled={isCurrent || upgrading === plan.name}
+                        className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all disabled:opacity-60 ${isCurrent
+                            ? "bg-primary/10 text-primary cursor-default"
+                            : plan.highlight
+                              ? "bg-primary text-primary-foreground hover:brightness-110 shadow-[0_4px_16px_hsl(var(--accent-glow))]"
+                              : "bg-surface border border-border text-foreground hover:bg-surface-2"
+                          }`}>
+                        {isCurrent ? "Current Plan" : upgrading === plan.name ? "Updating..." : plan.cta}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer note */}
+              <div className="border-t border-border px-6 py-4 text-center">
+                <p className="text-[11px] text-muted-foreground">Secure payment. Cancel anytime. Questions? <a href="mailto:support@onboardly.app" className="text-primary hover:underline">support@onboardly.app</a></p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
