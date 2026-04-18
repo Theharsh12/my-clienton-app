@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   Search, Clock, CheckCircle, Users, ChevronDown, Trash2,
   ArrowRight, Copy, ExternalLink, Bell, Plus, Eye, Sparkles, Zap, Crown, X, Check,
+  Globe, ShoppingCart, User, Layout, Cpu, FileText,
 } from "lucide-react";
 import CreateClientDialog from "@/components/CreateClientDialog";
 import ClientDetailDialog from "@/components/ClientDetailDialog";
@@ -59,6 +60,8 @@ export default function Clients() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [currentPlan, setCurrentPlan] = useState<Plan>("free");
   const [showPricing, setShowPricing] = useState(false);
+  const [showTemplate, setShowTemplate] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   // Fetch current plan
@@ -260,10 +263,14 @@ export default function Clients() {
                 : "Click any client to view their details and take action."}
             </p>
           </div>
-          <button onClick={() => setShowCreate(true)}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all hover:-translate-y-0.5 shadow-[0_4px_16px_hsl(var(--accent-glow))] shrink-0">
-            <Plus size={14} /> Create Client Intake
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setShowTemplate(true)}
+              disabled={currentPlan === "free" && clients.length >= 2}
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all hover:-translate-y-0.5 shadow-[0_4px_16px_hsl(var(--accent-glow))] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0">
+              <Plus size={14} /> Create Client Intake
+            </button>
+          </div>
         </div>
 
         {/* ── FREE PLAN LIMIT BANNER ── */}
@@ -284,7 +291,7 @@ export default function Clients() {
         )}
 
         {/* ── GETTING STARTED ── */}
-        <GettingStarted clients={clients} onCreateClient={() => setShowCreate(true)} />
+        <GettingStarted clients={clients} onCreateClient={() => setShowTemplate(true)} />
 
         {/* ── STAT CARDS ── */}
         {clients.length > 0 && (
@@ -314,8 +321,10 @@ export default function Clients() {
           <>
             <div className="flex items-center justify-between gap-3 mb-3">
               <h2 className="font-display text-[18px] text-foreground">Your Clients</h2>
-              <button onClick={() => setShowCreate(true)}
-                className="sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold bg-primary text-primary-foreground">
+              <button 
+                onClick={() => setShowTemplate(true)}
+                disabled={currentPlan === "free" && clients.length >= 2}
+                className="sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold bg-primary text-primary-foreground disabled:opacity-50">
                 <Plus size={12} /> New
               </button>
             </div>
@@ -390,7 +399,7 @@ export default function Clients() {
             <p className="text-sm text-muted-foreground mb-8 max-w-[340px] mx-auto leading-relaxed">
               Create your first client and send them an onboarding link in under 2 minutes.
             </p>
-            <button onClick={() => setShowCreate(true)}
+            <button onClick={() => setShowTemplate(true)}
               className="group px-6 py-3 rounded-xl text-[14px] font-semibold bg-primary text-primary-foreground hover:brightness-110 transition-all hover:-translate-y-0.5 shadow-[0_4px_20px_hsl(var(--accent-glow))] flex items-center justify-center gap-2 mx-auto mb-4">
               Create your first client <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
             </button>
@@ -424,6 +433,11 @@ export default function Clients() {
                         <div className="flex items-center gap-2 flex-wrap mb-0.5">
                           <span className="text-[14px] font-semibold text-foreground group-hover:text-primary transition-colors">{client.name}</span>
                           <StateBadge state={client.client_state} />
+                          {(client as any).template_type && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-surface-2 border border-border text-muted-foreground font-medium">
+                              {(client as any).template_type}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11.5px] text-muted-foreground">
                           {client.email || "No email"} · Added {formatRelativeTime(client.created_at)}
@@ -496,9 +510,12 @@ export default function Clients() {
       </div>
 
       {showCreate && (
-        <CreateClientDialog userId={user.id}
-          onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); }} />
+        <CreateClientDialog
+          userId={user.id}
+          selectedTemplate={selectedTemplate}
+          onClose={() => { setShowCreate(false); setSelectedTemplate(null); }}
+          onCreated={() => { setShowCreate(false); setSelectedTemplate(null); queryClient.invalidateQueries({ queryKey: ['clients', user?.id] }); }}
+        />
       )}
 
       {selectedClient && (
@@ -524,6 +541,72 @@ export default function Clients() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+
+      {/* ── TEMPLATE SELECTION MODAL ── */}
+      <AnimatePresence>
+        {showTemplate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-md z-[60] flex items-center justify-center p-4"
+            onClick={() => setShowTemplate(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 12 }}
+              transition={{ type: "spring", damping: 22, stiffness: 300 }}
+              className="bg-surface border border-border rounded-[20px] w-full max-w-[680px] overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.3)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between p-6 pb-4">
+                <div>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-1">New Client</p>
+                  <h2 className="font-display text-[24px] text-foreground tracking-tight leading-tight">Choose a Template</h2>
+                  <p className="text-[13px] text-muted-foreground mt-1">Start with a pre-built onboarding structure</p>
+                </div>
+                <button onClick={() => setShowTemplate(false)}
+                  className="p-2 rounded-xl hover:bg-surface-2 text-muted-foreground hover:text-foreground transition-all">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Templates grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 px-6 pb-6">
+                {[
+                  { name: "Landing Page", desc: "Single-page site to capture leads", icon: <FileText size={22} />, color: "text-blue-400", bg: "bg-blue-500/10" },
+                  { name: "Business Website", desc: "Full website for established businesses", icon: <Globe size={22} />, color: "text-purple-400", bg: "bg-purple-500/10" },
+                  { name: "E-commerce", desc: "Online store with products & checkout", icon: <ShoppingCart size={22} />, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                  { name: "Portfolio", desc: "Showcase work, case studies & skills", icon: <User size={22} />, color: "text-amber-400", bg: "bg-amber-500/10" },
+                  { name: "SaaS", desc: "Product site with features & pricing", icon: <Cpu size={22} />, color: "text-pink-400", bg: "bg-pink-500/10" },
+                  { name: "Custom", desc: "Start blank and build your own flow", icon: <Layout size={22} />, color: "text-muted-foreground", bg: "bg-surface-2" },
+                ].map(t => (
+                  <motion.button
+                    key={t.name}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      setSelectedTemplate(t.name);
+                      setShowTemplate(false);
+                      setShowCreate(true);
+                    }}
+                    className="group text-left p-4 rounded-[14px] border border-border bg-surface-2 hover:border-primary/40 hover:bg-primary/[0.02] transition-all"
+                  >
+                    <div className={`w-10 h-10 rounded-xl ${t.bg} flex items-center justify-center mb-3 ${t.color} group-hover:scale-110 transition-transform`}>
+                      {t.icon}
+                    </div>
+                    <p className="text-[13px] font-semibold text-foreground mb-1">{t.name}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{t.desc}</p>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── PRICING MODAL ── */}
       <AnimatePresence>
@@ -593,10 +676,10 @@ export default function Clients() {
                   const isCurrent = currentPlan === planKey;
                   return (
                     <div key={plan.name} className={`relative border rounded-[16px] p-5 flex flex-col transition-all ${isCurrent
-                        ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]"
-                        : plan.highlight
-                          ? "border-primary bg-primary/[0.03] shadow-[0_0_30px_hsl(var(--accent-glow))]"
-                          : "border-border bg-surface-2"
+                      ? "border-primary ring-2 ring-primary/20 bg-primary/[0.04]"
+                      : plan.highlight
+                        ? "border-primary bg-primary/[0.03] shadow-[0_0_30px_hsl(var(--accent-glow))]"
+                        : "border-border bg-surface-2"
                       }`}>
                       {isCurrent && (
                         <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full">
@@ -605,8 +688,8 @@ export default function Clients() {
                       )}
                       {plan.badge && !isCurrent && (
                         <div className={`absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-semibold px-3 py-1 rounded-full border whitespace-nowrap ${plan.name === "Lifetime"
-                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                            : "bg-primary/10 text-primary border-primary/25"
+                          ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                          : "bg-primary/10 text-primary border-primary/25"
                           }`}>
                           {plan.badge}
                         </div>
@@ -629,10 +712,10 @@ export default function Clients() {
                         onClick={() => handlePlanClick(plan.name)}
                         disabled={isCurrent || upgrading === plan.name}
                         className={`w-full py-2.5 rounded-xl text-[13px] font-semibold transition-all disabled:opacity-60 ${isCurrent
-                            ? "bg-primary/10 text-primary cursor-default"
-                            : plan.highlight
-                              ? "bg-primary text-primary-foreground hover:brightness-110 shadow-[0_4px_16px_hsl(var(--accent-glow))]"
-                              : "bg-surface border border-border text-foreground hover:bg-surface-2"
+                          ? "bg-primary/10 text-primary cursor-default"
+                          : plan.highlight
+                            ? "bg-primary text-primary-foreground hover:brightness-110 shadow-[0_4px_16px_hsl(var(--accent-glow))]"
+                            : "bg-surface border border-border text-foreground hover:bg-surface-2"
                           }`}>
                         {isCurrent ? "Current Plan" : upgrading === plan.name ? "Updating..." : plan.cta}
                       </button>

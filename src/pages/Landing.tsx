@@ -218,7 +218,7 @@ export default function Landing() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground mb-7">
             <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse-dot" />
-            Client Onboarding For Web Designers
+            Built For Web Designers & Agencies
           </div>
         </motion.div>
 

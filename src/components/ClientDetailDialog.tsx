@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { FileDown, Copy, Check, MessageCircle, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { FileDown, Copy, Check, MessageCircle, Clock, CheckCircle2, ChevronRight, FileText } from "lucide-react";
 import type { ClientRow } from "@/types/client";
 
 interface OnboardingResponse {
@@ -18,6 +18,9 @@ interface OnboardingResponse {
   submitted_at:         string | null;
   created_at:           string | null;
   updated_at:           string | null;
+  extra_notes:          string | null;
+  files:                { name: string; url: string; type: string; }[] | null;
+  custom_fields:        { label: string; answer: string; }[] | null;
 }
 
 interface Props {
@@ -386,6 +389,60 @@ export default function ClientDetailDialog({ client, onClose, onUpdated }: Props
                       </motion.div>
                     );
                   })}
+
+                  {/* ── Extra Notes ── */}
+                  {response.extra_notes && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      className="border border-primary/15 bg-primary/[0.01] rounded-2xl p-5 hover:border-primary/30 transition-all">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <FileText size={15} className="text-primary" />
+                        <span className="text-[12.5px] font-bold text-foreground/80 tracking-tight">Additional Notes</span>
+                      </div>
+                      <p className="text-[13.5px] text-foreground font-medium leading-relaxed bg-surface-2/50 p-3 rounded-xl border border-border/40 whitespace-pre-wrap">
+                        {response.extra_notes}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* ── Custom Details (Q&A) ── */}
+                  {response.custom_fields && response.custom_fields.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-4 mb-2">Custom Questions</p>
+                      {response.custom_fields.map((field, idx) => (
+                        <motion.div key={idx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                          className="border border-primary/15 bg-primary/[0.01] rounded-2xl p-5 hover:border-primary/30 transition-all">
+                          <p className="text-[12.5px] font-bold text-foreground/80 mb-2 leading-tight">
+                            {field.label || `Custom Question ${idx + 1}`}
+                          </p>
+                          <p className="text-[13.5px] text-foreground font-medium bg-surface-2/50 p-3 rounded-xl border border-border/40 whitespace-pre-wrap">
+                            {field.answer || "No response provided."}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* ── Shared Files ── */}
+                  {response.files && response.files.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-4 mb-2">Uploaded Files</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {response.files.map((file, idx) => (
+                          <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-surface-2 hover:bg-surface-3 transition-all group">
+                            <div className="w-8 h-8 rounded-lg bg-background flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                              <FileDown size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12.5px] font-semibold text-foreground truncate">{file.name}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase">{file.type.split("/")[1] || "file"}</p>
+                            </div>
+                            <ChevronRight size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </AnimatePresence>
               </motion.div>
             )}

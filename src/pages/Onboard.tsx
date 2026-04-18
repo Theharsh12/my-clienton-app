@@ -33,10 +33,6 @@ const EMPTY_FORM: OnboardingForm = {
   status: "pending",
 };
 
-const PAGES_OPTIONS = [
-  "Home", "About", "Services", "Contact", "Blog", "Portfolio",
-  "Testimonials", "FAQ", "Pricing", "Team", "Gallery", "Shop",
-];
 const BUDGET_OPTIONS = [
   "Under ₹15,000", "₹15,000 – ₹30,000", "₹30,000 – ₹60,000",
   "₹60,000 – ₹1,00,000", "Above ₹1,00,000", "Let's discuss",
@@ -45,12 +41,298 @@ const TIMELINE_OPTIONS = [
   "ASAP (within 1 week)", "2–4 weeks", "1–2 months", "2–3 months", "Flexible / No rush",
 ];
 
+// ── Template Config ────────────────────────────────────────────────────────────
+
+type TemplateType = "Landing Page" | "Business Website" | "E-commerce" | "Portfolio" | "SaaS" | "Custom" | null;
+
+interface TemplateConfig {
+  label: string;
+  emoji: string;
+  heroTitle: string;
+  heroSub: string;
+  sections: {
+    heading: string;
+    fields: {
+      key: keyof OnboardingForm;
+      label: string;
+      sublabel: string;
+      placeholder: string;
+      type: "input" | "textarea";
+      required?: boolean;
+    }[];
+  }[];
+  pagesOptions: string[];
+  showPages: boolean;
+}
+
+const TEMPLATE_CONFIGS: Record<string, TemplateConfig> = {
+  "Landing Page": {
+    label: "Landing Page",
+    emoji: "🚀",
+    heroTitle: "Let's build your",
+    heroSub: "Takes 2–3 minutes. The clearer your answers, the higher your conversions.",
+    sections: [
+      {
+        heading: "About your product / service",
+        fields: [
+          {
+            key: "business_name", label: "Product or Business Name", required: true,
+            sublabel: "What's the name of your product or brand?",
+            placeholder: "e.g. LaunchPad Pro", type: "input",
+          },
+          {
+            key: "business_description", label: "What does it do?",
+            sublabel: "Describe what you offer in 1–2 sentences.",
+            placeholder: "e.g. A SaaS tool that helps freelancers send invoices in under 60 seconds.", type: "textarea",
+          },
+          {
+            key: "target_audience", label: "Who is your target audience?",
+            sublabel: "Who are you trying to reach with this page?",
+            placeholder: "e.g. Freelance designers & developers aged 22–40 who hate manual invoicing.", type: "textarea",
+          },
+        ],
+      },
+      {
+        heading: "Page goal & messaging",
+        fields: [
+          {
+            key: "website_goal", label: "Main goal of this landing page", required: true,
+            sublabel: "What should a visitor DO after landing on this page?",
+            placeholder: "e.g. Sign up for a free trial, book a demo, or buy now.", type: "textarea",
+          },
+          {
+            key: "competitors", label: "Reference websites you love",
+            sublabel: "Share links to landing pages whose design or copy you admire.",
+            placeholder: "e.g. linear.app, stripe.com — love their clean minimal look.", type: "textarea",
+          },
+        ],
+      },
+    ],
+    pagesOptions: ["Hero Section", "Features", "Pricing", "Testimonials", "FAQ", "CTA", "About", "Footer"],
+    showPages: true,
+  },
+
+  "Business Website": {
+    label: "Business Website",
+    emoji: "🏢",
+    heroTitle: "Let's plan your",
+    heroSub: "Takes 2–3 minutes. Good answers = a website that actually works for your business.",
+    sections: [
+      {
+        heading: "About your business",
+        fields: [
+          {
+            key: "business_name", label: "Business Name", required: true,
+            sublabel: "What's the official name of your business?",
+            placeholder: "e.g. Sharma & Sons Enterprises", type: "input",
+          },
+          {
+            key: "business_description", label: "What does your business do?",
+            sublabel: "Describe your services or products and what makes you stand out.",
+            placeholder: "e.g. We provide premium catering services for corporate events across Mumbai.", type: "textarea",
+          },
+          {
+            key: "target_audience", label: "Who are your ideal customers?",
+            sublabel: "Age, location, profession, problems they have.",
+            placeholder: "e.g. Corporate HR teams in metro cities looking for reliable event catering.", type: "textarea",
+          },
+          {
+            key: "competitors", label: "Competitor websites",
+            sublabel: "Share competitor or inspiration websites.",
+            placeholder: "e.g. www.cateringsolutions.in — I like their gallery & testimonials section.", type: "textarea",
+          },
+        ],
+      },
+      {
+        heading: "Website vision",
+        fields: [
+          {
+            key: "website_goal", label: "What should your website achieve?", required: true,
+            sublabel: "What do you want visitors to do — call, enquire, book, trust you?",
+            placeholder: "e.g. Generate enquiry calls, build credibility, show our past work.", type: "textarea",
+          },
+        ],
+      },
+    ],
+    pagesOptions: ["Home", "About", "Services", "Contact", "Gallery", "Testimonials", "Blog", "Team", "FAQ", "Pricing"],
+    showPages: true,
+  },
+
+  "E-commerce": {
+    label: "E-commerce",
+    emoji: "🛒",
+    heroTitle: "Let's build your online store",
+    heroSub: "Takes 2–3 minutes. Tell us about your products and store goals.",
+    sections: [
+      {
+        heading: "About your store",
+        fields: [
+          {
+            key: "business_name", label: "Store / Brand Name", required: true,
+            sublabel: "What's the name of your online store or brand?",
+            placeholder: "e.g. ZenThreads", type: "input",
+          },
+          {
+            key: "business_description", label: "What do you sell?",
+            sublabel: "Describe your products — category, range, price point.",
+            placeholder: "e.g. Handmade cotton kurtas & ethnic wear for women, priced ₹500–₹3,000.", type: "textarea",
+          },
+          {
+            key: "target_audience", label: "Who are your buyers?",
+            sublabel: "Describe your ideal customer.",
+            placeholder: "e.g. Women aged 25–45, interested in ethnic fashion, mostly from Tier 1 cities.", type: "textarea",
+          },
+        ],
+      },
+      {
+        heading: "Store goals",
+        fields: [
+          {
+            key: "website_goal", label: "What's your main store goal?", required: true,
+            sublabel: "What do you want customers to do — browse, buy, subscribe?",
+            placeholder: "e.g. Easy product discovery, simple checkout, and repeat purchases via email list.", type: "textarea",
+          },
+          {
+            key: "competitors", label: "Stores you admire",
+            sublabel: "Share competitor or reference stores.",
+            placeholder: "e.g. Fabindia.com, Jaypore.com — love their clean product layout.", type: "textarea",
+          },
+        ],
+      },
+    ],
+    pagesOptions: ["Home", "Product Listing", "Product Detail", "Cart", "Checkout", "About", "Contact", "Blog", "Wishlist", "Offers"],
+    showPages: true,
+  },
+
+  "Portfolio": {
+    label: "Portfolio",
+    emoji: "🎨",
+    heroTitle: "Let's showcase your work",
+    heroSub: "Takes 2–3 minutes. A great portfolio brief = a site that wins clients.",
+    sections: [
+      {
+        heading: "About you",
+        fields: [
+          {
+            key: "business_name", label: "Your Name / Brand", required: true,
+            sublabel: "What name should be on the portfolio?",
+            placeholder: "e.g. Priya Menon Design Studio", type: "input",
+          },
+          {
+            key: "business_description", label: "What do you do?",
+            sublabel: "Your profession, skills & what kind of work you do.",
+            placeholder: "e.g. UI/UX Designer with 5 years of experience in fintech & edtech apps.", type: "textarea",
+          },
+          {
+            key: "target_audience", label: "Who should this portfolio attract?",
+            sublabel: "Startups? Agencies? Corporate clients?",
+            placeholder: "e.g. Early-stage startups looking for a freelance product designer.", type: "textarea",
+          },
+        ],
+      },
+      {
+        heading: "Portfolio goal",
+        fields: [
+          {
+            key: "website_goal", label: "What should visitors do?", required: true,
+            sublabel: "Book a call, send an email, follow you on social?",
+            placeholder: "e.g. Book a discovery call via Calendly or reach out via email.", type: "textarea",
+          },
+          {
+            key: "competitors", label: "Portfolio sites you love",
+            sublabel: "Links to portfolios whose style inspires you.",
+            placeholder: "e.g. paarth.design, brittanychiang.com — love the minimal dark aesthetic.", type: "textarea",
+          },
+        ],
+      },
+    ],
+    pagesOptions: ["Home", "Work / Projects", "About", "Contact", "Resume/CV", "Blog", "Testimonials", "Services"],
+    showPages: true,
+  },
+
+  "SaaS": {
+    label: "SaaS",
+    emoji: "⚡",
+    heroTitle: "Let's plan your SaaS website",
+    heroSub: "Takes 2–3 minutes. Help us understand your product and positioning.",
+    sections: [
+      {
+        heading: "About your product",
+        fields: [
+          {
+            key: "business_name", label: "Product Name", required: true,
+            sublabel: "What's your SaaS product called?",
+            placeholder: "e.g. Flowdesk", type: "input",
+          },
+          {
+            key: "business_description", label: "What problem does it solve?",
+            sublabel: "Describe the product and the pain point it fixes.",
+            placeholder: "e.g. Flowdesk automates follow-up emails for sales reps, saving 2 hours/day.", type: "textarea",
+          },
+          {
+            key: "target_audience", label: "Who is your ICP (Ideal Customer Profile)?",
+            sublabel: "Company size, role, industry.",
+            placeholder: "e.g. SMB sales teams of 5–50 people using CRMs like Pipedrive or HubSpot.", type: "textarea",
+          },
+          {
+            key: "competitors", label: "Competitor or reference SaaS sites",
+            sublabel: "Who are your competitors? Which SaaS sites do you admire?",
+            placeholder: "e.g. Notion.so, Linear.app — love their clean product-led websites.", type: "textarea",
+          },
+        ],
+      },
+      {
+        heading: "Website strategy",
+        fields: [
+          {
+            key: "website_goal", label: "What's the website's primary CTA?", required: true,
+            sublabel: "Free trial? Demo booking? Waitlist signup?",
+            placeholder: "e.g. Sign up for a 14-day free trial, no credit card required.", type: "textarea",
+          },
+        ],
+      },
+    ],
+    pagesOptions: ["Hero", "Features", "Pricing", "Testimonials / Social Proof", "FAQ", "Blog", "About", "Contact", "Changelog", "Docs"],
+    showPages: true,
+  },
+
+  "Custom": {
+    label: "Custom",
+    emoji: "✏️",
+    heroTitle: "Let's plan your project",
+    heroSub: "Takes 2–3 minutes. Answer the brief below so we can get started.",
+    sections: [],
+    pagesOptions: [],
+    showPages: false,
+  },
+};
+
+// Default config for when no template is set (generic)
+const DEFAULT_CONFIG: TemplateConfig = TEMPLATE_CONFIGS["Custom"];
+
+function getConfig(templateType: string | null): TemplateConfig {
+  if (!templateType) return DEFAULT_CONFIG;
+  return TEMPLATE_CONFIGS[templateType] ?? DEFAULT_CONFIG;
+}
+
+// ── Progress calc ──────────────────────────────────────────────────────────────
+
+function calcFilledCount(form: OnboardingForm): number {
+  return [
+    form.business_name, form.business_description, form.target_audience,
+    form.competitors, form.website_goal,
+    form.pages_needed.length > 0 ? "x" : "",
+    form.budget, form.timeline,
+  ].filter(Boolean).length;
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 export default function Onboard() {
   const { token } = useParams<{ token: string }>();
   const [clientName, setClientName] = useState("");
   const [clientId, setClientId] = useState("");
+  const [templateType, setTemplateType] = useState<string | null>(null);
   const [form, setForm] = useState<OnboardingForm>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,17 +351,18 @@ export default function Onboard() {
     if (!t) { setNotFound(true); setLoading(false); return; }
     try {
       const { data: client, error } = await supabase
-        .from("clients").select("id, name").eq("token", t).maybeSingle();
+        .from("clients").select("id, name, template_type").eq("token", t).maybeSingle();
       if (error || !client) { setNotFound(true); setLoading(false); return; }
       setClientName(client.name);
       setClientId(client.id);
+      setTemplateType((client as any).template_type ?? null);
 
       // Track that client opened the link
       await supabase
         .from("clients")
         .update({ link_opened_at: new Date().toISOString() })
         .eq("id", client.id)
-        .is("link_opened_at", null); // only update if not already set
+        .is("link_opened_at", null);
 
       const { data: existing } = await supabase
         .from("onboarding_responses").select("*").eq("client_id", client.id).maybeSingle();
@@ -101,6 +384,10 @@ export default function Onboard() {
         });
         if (existing.extra_notes || (existing.files?.length > 0) || (existing.custom_fields?.length > 0)) {
           setShowExtra(true);
+          // If custom template and they have custom fields, auto open the fields tab
+          if ((client as any).template_type === "Custom" && existing.custom_fields?.length > 0) {
+            setActiveExtra("fields");
+          }
         }
       }
     } catch (err) {
@@ -111,6 +398,8 @@ export default function Onboard() {
   }, [token]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const config = getConfig(templateType);
 
   // required fields filled?
   const requiredFilled = form.business_name.trim().length > 0 && form.website_goal.trim().length > 0;
@@ -169,10 +458,9 @@ export default function Onboard() {
     set("files", form.files.filter((_, idx) => idx !== i));
 
   // ── Create empty draft on first keystroke ────────────────────────────────────
-  // This makes "Started filling form" appear on dashboard immediately
 
   const createDraftIfNeeded = async () => {
-    if (form.id || !clientId) return; // already exists
+    if (form.id || !clientId) return;
     try {
       const { data, error } = await supabase
         .from("onboarding_responses")
@@ -219,7 +507,6 @@ export default function Onboard() {
         result = await supabase.from("onboarding_responses")
           .update(payload).eq("id", form.id).select("id, status").single();
       } else {
-        // upsert in case draft was created by createDraftIfNeeded concurrently
         result = await supabase.from("onboarding_responses")
           .upsert({ ...payload }, { onConflict: "client_id" })
           .select("id, status").single();
@@ -228,7 +515,6 @@ export default function Onboard() {
       setForm(prev => ({ ...prev, id: result.data.id, status: result.data.status as any }));
       setLastSaved(new Date());
       if (submit) toast.success("Brief submitted! Your designer has been notified. 🎉");
-      // else        toast.success("Draft saved.");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to save. Please try again.");
     } finally {
@@ -245,15 +531,14 @@ export default function Onboard() {
     disabled:opacity-50 disabled:cursor-not-allowed`;
 
   const isSubmitted = form.status === "submitted";
-  const canSubmit = !saving && form.business_name.trim() && form.website_goal.trim();
+  const isCustomTemplate = templateType === "Custom";
+  const canSubmit = isCustomTemplate
+    ? !saving && form.custom_fields.length > 0 && form.custom_fields.some(f => f.answer.trim())
+    : !saving && form.business_name.trim() && form.website_goal.trim();
 
-  const filledCount = [
-    form.business_name, form.business_description, form.target_audience,
-    form.competitors, form.website_goal,
-    form.pages_needed.length > 0 ? "x" : "",
-    form.budget, form.timeline,
-  ].filter(Boolean).length;
-  const pct = Math.round((filledCount / 8) * 100);
+  const filledCount = isCustomTemplate ? form.custom_fields.filter(f => f.answer.trim()).length : calcFilledCount(form);
+  const totalFields = isCustomTemplate ? Math.max(form.custom_fields.length, 1) : 8;
+  const pct = Math.round((filledCount / totalFields) * 100);
 
   // ── Loading / Not Found ───────────────────────────────────────────────────────
 
@@ -338,7 +623,14 @@ export default function Onboard() {
             <div className="w-[34px] h-[34px] rounded-[9px] bg-primary flex items-center justify-center text-[15px] text-primary-foreground font-bold">⚡</div>
             <span className="text-[15px] font-semibold text-foreground">Onboardly</span>
           </div>
-          <span className="text-xs text-muted-foreground">{filledCount}/8 fields filled</span>
+          <div className="flex items-center gap-2.5">
+            {templateType && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/8 border border-primary/15 px-2.5 py-1 rounded-full">
+                {config.emoji} {config.label}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">{filledCount}/{totalFields} fields filled</span>
+          </div>
         </div>
       </header>
 
@@ -349,10 +641,14 @@ export default function Onboard() {
             <span>👋</span> Welcome, {clientName}
           </div>
           <h1 className="font-display text-[34px] font-normal text-foreground leading-tight mb-2">
-            Let's plan <em className="italic text-primary">your website</em>
+            {config.heroTitle.split("your").map((part, i, arr) =>
+              i < arr.length - 1
+                ? <span key={i}>{part}your <em className="italic text-primary">{config.label.toLowerCase()}</em></span>
+                : <span key={i}>{part}</span>
+            )}
           </h1>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-[460px] mb-5">
-            Takes 2–3 minutes. The better you fill this, the better your website will turn out.
+            {config.heroSub}
           </p>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2.5 bg-secondary rounded-full overflow-hidden">
@@ -369,157 +665,135 @@ export default function Onboard() {
       <div className="max-w-[640px] mx-auto px-6 py-8 pb-20">
         <div className="space-y-5">
 
-          {/* ── SECTION: About your business ── */}
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1">About your business</p>
-
-          {/* 1. Business Name */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">
-              Business Name <span className="text-destructive">*</span>
-            </label>
-            <p className="text-[12px] text-muted-foreground mb-3">What's the name of your business or brand?</p>
-            <input className={inputCls} placeholder="e.g. Sharma Enterprises"
-              value={form.business_name}
-              onChange={e => { set("business_name", e.target.value); createDraftIfNeeded(); }}
-              onBlur={() => handleSave(false)}
-              disabled={isSubmitted} />
-          </motion.div>
-
-          {/* 2. Business Description */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">What does your business do?</label>
-            <p className="text-[12px] text-muted-foreground mb-3">Describe what you sell or offer, and what makes you different.</p>
-            <textarea className={inputCls + " min-h-[90px] resize-y"}
-              placeholder="e.g. We are a boutique interior design studio specialising in modern residential spaces..."
-              value={form.business_description}
-              onChange={e => { set("business_description", e.target.value); createDraftIfNeeded(); }}
-              onBlur={() => handleSave(false)}
-              disabled={isSubmitted} />
-          </motion.div>
-
-          {/* 3. Target Audience */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.11 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">Who is your target audience?</label>
-            <p className="text-[12px] text-muted-foreground mb-3">Describe your ideal customer — age, location, profession, needs.</p>
-            <textarea className={inputCls + " min-h-[80px] resize-y"}
-              placeholder="e.g. Home owners aged 30–55, looking for premium interior design services..."
-              value={form.target_audience}
-              onChange={e => { set("target_audience", e.target.value); createDraftIfNeeded(); }}
-              onBlur={() => handleSave(false)}
-              disabled={isSubmitted} />
-          </motion.div>
-
-          {/* 4. Competitors */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">Competitors or websites you admire</label>
-            <p className="text-[12px] text-muted-foreground mb-3">Share competitor websites or sites whose design you love.</p>
-            <textarea className={inputCls + " min-h-[80px] resize-y"}
-              placeholder="e.g. www.competitor.com — I like their clean layout. Also love Apple.com..."
-              value={form.competitors}
-              onChange={e => { set("competitors", e.target.value); createDraftIfNeeded(); }}
-              onBlur={() => handleSave(false)}
-              disabled={isSubmitted} />
-          </motion.div>
-
-          {/* ── SECTION: Website goals ── */}
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1 pt-2">Website goals</p>
-
-          {/* 5. Website Goal */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">
-              Describe your dream website <span className="text-destructive">*</span>
-            </label>
-            <p className="text-[12px] text-muted-foreground mb-3">What kind of look, feel, or experience do you want?</p>
-            <textarea className={inputCls + " min-h-[90px] resize-y"}
-              placeholder="e.g. Modern, minimal, bold. I want visitors to immediately book a consultation..."
-              value={form.website_goal}
-              onChange={e => { set("website_goal", e.target.value); createDraftIfNeeded(); }}
-              onBlur={() => handleSave(false)}
-              disabled={isSubmitted} />
-          </motion.div>
-
-          {/* 6. Pages Needed */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">Pages needed</label>
-            <p className="text-[12px] text-muted-foreground mb-3">Select all the pages you'd like on your website.</p>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {PAGES_OPTIONS.map(page => (
-                <button key={page} type="button" onClick={() => togglePage(page)} disabled={isSubmitted}
-                  className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all ${form.pages_needed.includes(page)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
-                  {page}
-                </button>
+          {/* ── TEMPLATE-SPECIFIC SECTIONS ── */}
+          {config.sections.map((section, si) => (
+            <div key={si}>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-4">
+                {section.heading}
+              </p>
+              {section.fields.map((field, fi) => (
+                <motion.div
+                  key={field.key + fi}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (si * 5 + fi) * 0.05 }}
+                  className="bg-card border border-border rounded-[14px] p-5 mb-4"
+                >
+                  <label className="block text-[14px] font-medium text-foreground mb-0.5">
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </label>
+                  <p className="text-[12px] text-muted-foreground mb-3">{field.sublabel}</p>
+                  {field.type === "input" ? (
+                    <input
+                      className={inputCls}
+                      placeholder={field.placeholder}
+                      value={form[field.key] as string}
+                      onChange={e => { set(field.key, e.target.value); createDraftIfNeeded(); }}
+                      onBlur={() => handleSave(false)}
+                      disabled={isSubmitted}
+                    />
+                  ) : (
+                    <textarea
+                      className={inputCls + " min-h-[90px] resize-y"}
+                      placeholder={field.placeholder}
+                      value={form[field.key] as string}
+                      onChange={e => { set(field.key, e.target.value); createDraftIfNeeded(); }}
+                      onBlur={() => handleSave(false)}
+                      disabled={isSubmitted}
+                    />
+                  )}
+                </motion.div>
               ))}
             </div>
-            {!isSubmitted && (
-              <div className="flex gap-2">
-                <input className={inputCls + " flex-1"} placeholder="Other page (e.g. Careers)"
-                  value={extraPage} onChange={e => setExtraPage(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addExtraPage())} />
-                <button type="button" onClick={addExtraPage}
-                  className="px-3 py-2.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all shrink-0">
-                  Add
-                </button>
-              </div>
-            )}
-            {form.pages_needed.filter(p => !PAGES_OPTIONS.includes(p)).map(p => (
-              <div key={p} className="inline-flex items-center gap-1 mt-2 mr-1.5 px-2.5 py-1 rounded-full text-[12px] bg-primary/10 text-primary border border-primary/20">
-                {p}
-                {!isSubmitted && <button onClick={() => togglePage(p)} className="ml-1 text-primary/60 hover:text-primary">×</button>}
-              </div>
-            ))}
-          </motion.div>
+          ))}
 
-          {/* ── SECTION: Budget & Timeline ── */}
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1 pt-2">Budget & timeline</p>
+          {/* ── PAGES NEEDED ── */}
+          {config.showPages && (
+            <>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1 pt-2">Pages needed</p>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}
+                className="bg-card border border-border rounded-[14px] p-5">
+                <label className="block text-[14px] font-medium text-foreground mb-0.5">Which sections / pages do you need?</label>
+                <p className="text-[12px] text-muted-foreground mb-3">Select all that apply for your {config.label.toLowerCase()}.</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {config.pagesOptions.map(page => (
+                    <button key={page} type="button" onClick={() => togglePage(page)} disabled={isSubmitted}
+                      className={`px-3 py-1.5 rounded-full text-[12px] font-medium border transition-all ${form.pages_needed.includes(page)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                {!isSubmitted && (
+                  <div className="flex gap-2">
+                    <input className={inputCls + " flex-1"} placeholder="Other (e.g. Careers)"
+                      value={extraPage} onChange={e => setExtraPage(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addExtraPage())} />
+                    <button type="button" onClick={addExtraPage}
+                      className="px-3 py-2.5 rounded-lg text-[12px] font-medium border border-border text-muted-foreground hover:text-foreground transition-all shrink-0">
+                      Add
+                    </button>
+                  </div>
+                )}
+                {form.pages_needed.filter(p => !config.pagesOptions.includes(p)).map(p => (
+                  <div key={p} className="inline-flex items-center gap-1 mt-2 mr-1.5 px-2.5 py-1 rounded-full text-[12px] bg-primary/10 text-primary border border-primary/20">
+                    {p}
+                    {!isSubmitted && <button onClick={() => togglePage(p)} className="ml-1 text-primary/60 hover:text-primary">×</button>}
+                  </div>
+                ))}
+              </motion.div>
+            </>
+          )}
 
-          {/* 7. Budget */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">Budget range</label>
-            <p className="text-[12px] text-muted-foreground mb-3">Helps your designer suggest the right approach.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {BUDGET_OPTIONS.map(b => (
-                <button key={b} type="button"
-                  onClick={() => { set("budget", b); form.id && setTimeout(() => handleSave(false), 0); }}
-                  disabled={isSubmitted}
-                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.budget === b ? "bg-primary/8 border-primary/30 text-primary"
+          {/* ── BUDGET & TIMELINE ── */}
+          {!isCustomTemplate && (
+            <>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-1 pt-2">Budget & timeline</p>
+
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+                className="bg-card border border-border rounded-[14px] p-5">
+                <label className="block text-[14px] font-medium text-foreground mb-0.5">Budget range</label>
+                <p className="text-[12px] text-muted-foreground mb-3">Helps your designer suggest the right approach.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {BUDGET_OPTIONS.map(b => (
+                    <button key={b} type="button"
+                      onClick={() => { set("budget", b); form.id && setTimeout(() => handleSave(false), 0); }}
+                      disabled={isSubmitted}
+                      className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.budget === b ? "bg-primary/8 border-primary/30 text-primary"
+                        : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            </>
+          )}
+
+          {/* ── TIMELINE ── */}
+          {!isCustomTemplate && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.30 }}
+              className="bg-card border border-border rounded-[14px] p-5">
+              <label className="block text-[14px] font-medium text-foreground mb-0.5">Expected timeline</label>
+              <p className="text-[12px] text-muted-foreground mb-3">When do you need the website ready?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {TIMELINE_OPTIONS.map(t => (
+                  <button key={t} type="button"
+                    onClick={() => { set("timeline", t); form.id && setTimeout(() => handleSave(false), 0); }}
+                    disabled={isSubmitted}
+                    className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.timeline === t ? "bg-primary/8 border-primary/30 text-primary"
                       : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
-                  {b}
-                </button>
-              ))}
-            </div>
-          </motion.div>
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
-          {/* 8. Timeline */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
-            className="bg-card border border-border rounded-[14px] p-5">
-            <label className="block text-[14px] font-medium text-foreground mb-0.5">Expected timeline</label>
-            <p className="text-[12px] text-muted-foreground mb-3">When do you need the website ready?</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {TIMELINE_OPTIONS.map(t => (
-                <button key={t} type="button"
-                  onClick={() => { set("timeline", t); form.id && setTimeout(() => handleSave(false), 0); }}
-                  disabled={isSubmitted}
-                  className={`px-3 py-2.5 rounded-lg text-[12px] font-medium border text-left transition-all ${form.timeline === t ? "bg-primary/8 border-primary/30 text-primary"
-                      : "bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* ── SECTION: Anything else? (shows after required fields filled) ── */}
+          {/* ── ANYTHING ELSE? ── */}
           <AnimatePresence>
             {showExtra && !isSubmitted && (
               <motion.div
@@ -533,9 +807,8 @@ export default function Onboard() {
                     <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Anything else to share?</p>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">Optional</span>
                   </div>
-                  <p className="text-[12px] text-muted-foreground mb-4">Don't let anything slip through the cracks. Add files, notes, or extra details your designer should know.</p>
+                  <p className="text-[12px] text-muted-foreground mb-4">Add files, notes, or extra details your designer should know.</p>
 
-                  {/* Option buttons */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {[
                       { key: "files", icon: <Upload size={16} />, label: "Upload Files", desc: "Logo, images, docs" },
@@ -545,8 +818,8 @@ export default function Onboard() {
                       <button key={opt.key} type="button"
                         onClick={() => setActiveExtra(activeExtra === opt.key as any ? null : opt.key as any)}
                         className={`flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-xl border text-center transition-all ${activeExtra === opt.key
-                            ? "bg-primary/8 border-primary/30 text-primary"
-                            : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
+                          ? "bg-primary/8 border-primary/30 text-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/30 hover:text-foreground"
                           }`}>
                         {opt.icon}
                         <span className="text-[12px] font-medium">{opt.label}</span>
@@ -570,7 +843,6 @@ export default function Onboard() {
                               e.currentTarget.classList.remove("border-primary/50");
                               const dt = e.dataTransfer.files;
                               if (dt && fileInputRef.current) {
-                                // trigger upload manually
                                 const syntheticEvent = { target: { files: dt } } as any;
                                 await handleFileUpload(syntheticEvent);
                               }
@@ -582,7 +854,6 @@ export default function Onboard() {
                             <span className="text-[11px] text-muted-foreground/50 mt-1">Images, PDFs, docs accepted</span>
                             <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileUpload} />
                           </label>
-
                           {form.files.length > 0 && (
                             <div className="mt-3 space-y-2">
                               {form.files.map((f, i) => (
@@ -613,7 +884,7 @@ export default function Onboard() {
                         <div className="bg-card border border-border rounded-[14px] p-5 mb-3">
                           <label className="block text-[13px] font-medium text-foreground mb-2">Additional notes</label>
                           <textarea className={inputCls + " min-h-[100px] resize-y"}
-                            placeholder="Anything your designer should know that wasn't covered above... e.g. specific colors to avoid, inspiration, technical requirements, etc."
+                            placeholder="Anything your designer should know that wasn't covered above..."
                             value={form.extra_notes}
                             onChange={e => set("extra_notes", e.target.value)}
                             onBlur={() => handleSave(false)} />
@@ -632,23 +903,23 @@ export default function Onboard() {
                           <div className="space-y-3">
                             {form.custom_fields.map((field, i) => (
                               <div key={i} className="flex gap-2 items-start">
-                                <div className="flex-1 space-y-1.5">
-                                  <input className={inputCls} placeholder="Question / Label (e.g. Preferred color palette)"
+                                <div className="flex-1 space-y-1.5 focus-within:ring-1 focus-within:ring-primary/20 rounded-xl transition-all">
+                                  <input className={inputCls} placeholder="Write your question / requirement here..."
                                     value={field.label} onChange={e => updateCustomField(i, "label", e.target.value)} />
-                                  <input className={inputCls} placeholder="Your answer"
+                                  <textarea className={inputCls + " min-h-[60px] resize-none"} placeholder="Provide your answer or more details..."
                                     value={field.answer} onChange={e => updateCustomField(i, "answer", e.target.value)}
                                     onBlur={() => handleSave(false)} />
                                 </div>
                                 <button onClick={() => removeCustomField(i)}
-                                  className="mt-2 text-muted-foreground hover:text-destructive transition-colors shrink-0">
-                                  <X size={15} />
+                                  className="mt-2 p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0 bg-background rounded-md border border-border">
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             ))}
                           </div>
                           <button onClick={addCustomField}
-                            className="mt-3 flex items-center gap-1.5 text-[12px] text-primary hover:underline font-medium">
-                            <Plus size={12} /> Add detail
+                            className="mt-3 flex items-center gap-1.5 text-[12px] text-primary hover:underline font-medium bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
+                            <Plus size={12} /> Add your own question
                           </button>
                         </div>
                       </motion.div>

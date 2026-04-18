@@ -10,8 +10,9 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Clients from "./pages/Clients";
 import Onboard from "./pages/Onboard";
-import NotFound from "./pages/NotFound";
 
+import NotFound from "./pages/NotFound";
+// Top mein import add karo:
 const queryClient = new QueryClient();
 
 // ✅ Analytics logic ko alag component mein rakha hai
@@ -36,15 +37,17 @@ const App = () => {
         <Toaster />
         <BrowserRouter>
           {/* ✅ BrowserRouter ke andar hone se useLocation() crash nahi karega */}
-          <AnalyticsTracker /> 
+          <AnalyticsTracker />
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/clients" element={<Clients />} />
+
               <Route path="/onboard/:token" element={<Onboard />} />
               <Route path="/onboarding/:token" element={<Onboard />} />
               <Route path="*" element={<NotFound />} />
+
             </Routes>
           </AuthProvider>
         </BrowserRouter>
