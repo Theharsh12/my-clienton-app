@@ -5,142 +5,144 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "../integrations/supabase/client";
 import { toast } from "sonner";
 
+const PAIN_POINTS = [
+  { icon: "🔁", text: "You ask the same questions every single project" },
+  { icon: "🐌", text: "Clients reply late — or incompletely" },
+  { icon: "❓", text: "Important details go missing until mid-project" },
+  { icon: "💬", text: "You go back and forth for days before starting" },
+  { icon: "🔄", text: "Revisions happen because requirements were unclear" },
+];
+
 const FEATURES = [
   {
     icon: "🔗",
-    title: "Your client never gets confused",
-    text: "One link. No login, no account, no friction. They open it, fill it in, done. Most clients finish in under 15 minutes.",
+    title: "Get all client info in one go — no follow-ups needed",
+    text: "One link. No login, no account, no friction. Your client fills it in, you get everything. Most clients finish in under 15 minutes.",
     highlight: true,
   },
   {
     icon: "📋",
-    title: "Stop starting from scratch every time",
-    text: "Build a template once for 'Website Redesign' or 'Brand Identity'. Every new client gets the same clean flow.",
+    title: "Pre-built templates for different website types",
+    text: "Landing page, business site, e-commerce, portfolio — pick a template and every new client gets the right questions for their project.",
   },
   {
     icon: "📁",
-    title: "Files land in one place, not your inbox",
-    text: "Logo? Brand guidelines? Reference images? Clients upload directly into the form. No more hunting through old emails.",
+    title: "Turn answers into a clear website structure",
+    text: "Business goals, target audience, pages needed, style references — structured and ready to build from. No more guessing.",
   },
   {
     icon: "📊",
-    title: "Always know where things stand",
-    text: "See which clients are done, in progress, or haven't started — without sending a single follow-up message.",
-  },
-];
-
-const BEFORE_AFTER = [
-  {
-    before: "Hey, can you send me your logo again?",
-    after: "Logo uploaded. Sitting in your dashboard.",
-  },
-  {
-    before: "3 follow-ups later...Still missing files.",
-    after: "Client filled everything in one sitting.",
-  },
-  {
-    before: "Project delayed because brief was too vague.",
-    after: "You start with full context, zero back-and-forth.",
-  },
-  {
-    before: "Client says \"I thought you knew what I wanted.\"",
-    after: "Everything documented. Expectations aligned.",
+    title: "See exactly where every client stands",
+    text: "Track who's done, who's in progress, who needs a nudge — without sending a single follow-up message.",
   },
 ];
 
 const HOW_IT_WORKS = [
-  {
-    step: "01",
-    title: "Add a client",
-    text: "Enter your client's name and email. Takes 30 seconds.",
-  },
-  {
-    step: "02",
-    title: "Send the magic link",
-    text: "Copy one link and send it over WhatsApp, email, wherever. No login needed for them.",
-  },
-  {
-    step: "03",
-    title: "They fill it in",
-    text: "Your client answers a structured brief — business info, goals, budget, files. All in one place.",
-  },
-  {
-    step: "04",
-    title: "You start the project",
-    text: "Everything you need is ready. No chasing. No missing assets. Just start.",
-  },
+  { step: "01", title: "Create a client", text: "Add your client's name and project type. Takes 30 seconds." },
+  { step: "02", title: "Send the link", text: "Copy one onboarding link. Send it via WhatsApp, email, anywhere." },
+  { step: "03", title: "Client fills the form", text: "They answer structured questions about their business, goals, and style." },
+  { step: "04", title: "Get a ready-to-use brief", text: "Instantly receive a clear website plan you can actually build from." },
 ];
 
 const AFTER_SUBMIT_STEPS = [
   {
     icon: "📬",
-    title: "You get notified instantly",
-    text: "The moment your client submits, you know. No need to keep checking.",
+    title: "Notified the moment they submit",
+    text: "No need to chase or keep checking. You'll know the instant your client is done.",
   },
   {
     icon: "📄",
-    title: "Every answer in one place",
-    text: "Business name, goals, pages, budget, timeline — structured and readable. Export as CSV if needed.",
+    title: "Everything structured and readable",
+    text: "Business name, goals, pages, budget, tone, style references — organized in one place. Export as CSV if needed.",
   },
   {
     icon: "🚀",
-    title: "Start with full confidence",
-    text: "No vague brief. No missing assets. No assumptions. Just clear info and a client who feels heard.",
+    title: "Start the project with full clarity",
+    text: "No vague brief. No missing assets. No assumptions. Just clear information and a client who feels heard.",
   },
 ];
 
 const TESTIMONIALS = [
-  {
-    text: "I used to spend days chasing clients for assets. Now they complete everything in under an hour.",
-    name: "Marcus Reid",
-    role: "Freelance Designer",
-    color: "#7C6EF2",
-    init: "MR",
-  },
-  {
-    text: "My clients actually compliment the onboarding experience. That never happened with Google Docs.",
-    name: "Priya Mehta",
-    role: "Solo Freelancer",
-    color: "#F472B6",
-    init: "PM",
-  },
-  {
-    text: "Simple, clean, does exactly one thing well. I set it up in 5 minutes and never looked back.",
-    name: "Jake Novak",
-    role: "Web Designer",
-    color: "#60A5FA",
-    init: "JN",
-  },
+  { text: "I used to spend days chasing clients for assets. Now they complete everything in under an hour.", name: "Marcus Reid", role: "Freelance Designer", color: "#7C6EF2", init: "MR" },
+  { text: "My clients actually compliment the onboarding experience. That never happened with Google Docs.", name: "Priya Mehta", role: "Solo Freelancer", color: "#F472B6", init: "PM" },
+  { text: "Simple, clean, does exactly one thing well. I set it up in 5 minutes and never looked back.", name: "Jake Novak", role: "Web Designer", color: "#60A5FA", init: "JN" },
 ];
 
 const PLANS = [
   {
-    name: "Free",
-    price: "$0",
-    period: "forever",
+    name: "Free", price: "$0", period: "forever",
     features: ["2 active clients", "1 template", "Onboardly branding"],
-    cta: "Start Free",
-    highlight: false,
+    cta: "Start Free", highlight: false,
   },
   {
-    name: "Pro",
-    price: "$9",
-    period: "/month",
+    name: "Pro", price: "$9", period: "/month",
     features: ["Unlimited clients", "Unlimited templates", "File uploads", "Completion tracking", "Remove branding"],
-    cta: "Go Pro",
-    highlight: true,
+    cta: "Go Pro", highlight: true,
   },
   {
-    name: "Lifetime",
-    price: "$79",
-    period: "one-time",
-    badge: "Best value",
+    name: "Lifetime", price: "$79", period: "one-time", badge: "Best value",
     features: ["All Pro features", "Lifetime access", "Priority support", "Pay once, use forever"],
-    cta: "Get Lifetime Access",
-    highlight: false,
+    cta: "Get Lifetime Access", highlight: false,
   },
 ];
 
+// ── Output Preview Card ────────────────────────────────────────────────────────
+function OutputPreviewCard() {
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.08)] max-w-[640px] mx-auto">
+      {/* Card header */}
+      <div className="bg-primary/5 border-b border-border px-5 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span className="text-[13px] font-semibold text-foreground">Client Website Brief</span>
+        </div>
+        <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+          ✓ Ready to build
+        </span>
+      </div>
+
+      {/* Brief content */}
+      <div className="p-5 space-y-4">
+        {[
+          { label: "Project overview", value: "Modern SaaS landing page" },
+          { label: "Target audience", value: "Startup founders & early-stage teams" },
+          { label: "Primary goal", value: "Generate demo bookings" },
+          { label: "Tone & style", value: "Clean, professional, modern" },
+          { label: "CTA button", value: "\"Book a Demo\"" },
+        ].map((row) => (
+          <div key={row.label} className="flex items-start gap-4">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider w-[130px] shrink-0 pt-0.5">{row.label}</span>
+            <span className="text-[13.5px] text-foreground">{row.value}</span>
+          </div>
+        ))}
+
+        {/* Key sections */}
+        <div className="flex items-start gap-4">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider w-[130px] shrink-0 pt-0.5">Key sections</span>
+          <div className="flex flex-wrap gap-1.5">
+            {["Hero with strong CTA", "Features breakdown", "Testimonials", "Pricing section"].map(s => (
+              <span key={s} className="text-[11px] px-2.5 py-1 rounded-full bg-primary/8 text-primary border border-primary/15 font-medium">
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-border px-5 py-3 flex items-center justify-between bg-secondary/30">
+        <span className="text-[11px] text-muted-foreground">Generated in 2 minutes · 8 fields filled</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-medium text-primary cursor-pointer hover:underline">Copy brief</span>
+          <span className="text-muted-foreground/30">·</span>
+          <span className="text-[11px] font-medium text-primary cursor-pointer hover:underline">Export CSV</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────────
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
   const [upgrading, setUpgrading] = useState<string | null>(null);
@@ -156,22 +158,19 @@ export default function Landing() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("plan").eq("user_id", user.id).single().then(({ data }) => {
-      if (data) setCurrentPlan(data.plan);
-    });
+    supabase.from("profiles").select("plan").eq("user_id", user.id).single()
+      .then(({ data }) => { if (data) setCurrentPlan(data.plan); });
   }, [user]);
 
   const handlePlanClick = async (planName: string) => {
     if (!user) { navigate("/auth"); return; }
     const planKey = planName === "Free" ? "free" : planName === "Lifetime" ? "lifetime" : "pro";
     setUpgrading(planName);
-    const { error } = await supabase
-      .from("profiles")
+    const { error } = await supabase.from("profiles")
       .upsert({ user_id: user.id, plan: planKey }, { onConflict: "user_id" });
     setUpgrading(null);
-    if (error) {
-      toast.error("Failed to update plan. Please try again.");
-    } else {
+    if (error) toast.error("Failed to update plan. Please try again.");
+    else {
       toast.success(planName === "Free" ? "Switched to Free plan!" : `Upgraded to ${planName}!`);
       setCurrentPlan(planKey);
       navigate("/clients");
@@ -181,14 +180,14 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
 
-      {/* NAVBAR */}
+      {/* ── NAVBAR ── */}
       <nav className={`fixed top-0 inset-x-0 z-50 px-6 md:px-10 h-16 flex items-center justify-between transition-all ${scrolled ? "bg-background/94 backdrop-blur-xl border-b border-border" : ""}`}>
         <div className="flex items-center gap-2.5 font-display text-xl text-foreground">
           <img src="/favicon.svg" className="w-8 h-8" alt="Onboardly" />
           Onboardly
         </div>
         <div className="hidden md:flex items-center gap-8">
-          {[["Features", "#features"], ["How it works", "#how-it-works"], ["Pricing", "#pricing"], ["Testimonials", "#testimonials"]].map(([l, href]) =>
+          {[["How it works", "#how-it-works"], ["Features", "#features"], ["Pricing", "#pricing"], ["Testimonials", "#testimonials"]].map(([l, href]) =>
             <a key={l} href={href} className="text-sm text-muted-foreground font-medium hover:text-foreground transition-colors">{l}</a>
           )}
         </div>
@@ -199,49 +198,49 @@ export default function Landing() {
             </Link>
           ) : (
             <>
-              <Link to="/auth" className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground border border-border hover:text-foreground hover:border-foreground transition-all">
-                Log in
-              </Link>
-              <Link to="/auth" className="hidden sm:inline-flex px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md text-primary-foreground bg-primary">
-                Start Free →
-              </Link>
+              <Link to="/auth" className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground border border-border hover:text-foreground hover:border-foreground transition-all">Log in</Link>
+              <Link to="/auth" className="hidden sm:inline-flex px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md text-primary-foreground bg-primary">Start Free →</Link>
             </>
           )}
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section className="min-h-screen flex flex-col items-center justify-center text-center px-6 md:px-10 pt-[120px] pb-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--border))_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border))_1px,transparent_1px)] bg-[size:48px_48px] opacity-50 pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,transparent_0%,hsl(var(--background))_70%)] pointer-events-none" />
 
+        {/* Audience badge */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-card border border-border rounded-full px-4 py-1.5 text-xs font-medium text-muted-foreground mb-7">
             <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse-dot" />
-            Built For Web Designers & Agencies
+            Built for web designers & agencies handling multiple clients
           </div>
         </motion.div>
 
+        {/* Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="font-display text-[clamp(36px,7vw,80px)] font-bold leading-[1.05] text-foreground max-w-[820px] mb-5 relative z-10"
         >
-          Send one link.<br />Get everything you need to <em className="italic text-primary">start the project.</em>
+          Turn messy client answers<br />into a clear website brief <em className="italic text-primary">in 2 minutes.</em>
         </motion.h1>
 
+        {/* Subheadline */}
         <motion.p
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="text-[17px] text-muted-foreground leading-relaxed max-w-[520px] mb-9 relative z-10"
         >
-          Onboardly replaces back-and-forth emails with a structured onboarding brief your client actually fills in — before the project starts.
+          Stop chasing clients for details. Collect everything once — and instantly get a structured website plan you can actually build from.
         </motion.p>
 
+        {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4 relative z-10"
         >
           <Link to="/auth" className="flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-primary-foreground bg-primary shadow-[0_4px_20px_hsl(var(--accent-glow))] hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_8px_28px_hsl(var(--accent-glow))] transition-all">
-            Try With Your Next Client! ⚡
+            Generate Your First Client Brief →
           </Link>
         </motion.div>
 
@@ -249,10 +248,10 @@ export default function Landing() {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
           className="text-[12px] text-muted-foreground/60 mb-10 relative z-10"
         >
-          Free forever for up to 2 clients. Setup in 5 minutes.
+          Free forever for up to 2 clients · No credit card needed
         </motion.p>
 
-        {/* MOCKUP */}
+        {/* Browser mockup */}
         <motion.div
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.8 }}
           className="relative z-10 w-full max-w-[680px]"
@@ -291,33 +290,92 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* BEFORE vs AFTER */}
+      {/* ── OUTPUT PREVIEW ── */}
       <section className="py-20 px-6 md:px-10 bg-card border-y border-border">
+        <div className="max-w-[1080px] mx-auto">
+          <div className="text-center mb-10">
+            <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center justify-center gap-2">
+              <span className="w-5 h-[1.5px] bg-primary rounded-full" />The output
+            </div>
+            <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5">
+              See exactly <em className="italic font-normal">what you get 👇</em>
+            </h2>
+            <p className="text-[15px] text-muted-foreground max-w-[480px] mx-auto">
+              Every client submission generates a structured brief like this — ready to build from, no interpretation needed.
+            </p>
+          </div>
+          <OutputPreviewCard />
+        </div>
+      </section>
+
+      {/* ── PAIN POINTS ── */}
+      <section className="py-20 px-6 md:px-10">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />Sound familiar?
           </div>
           <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-10 max-w-[560px]">
-            The old way is <em className="italic font-normal">costing you</em> time.
+            You're wasting time on <em className="italic font-normal">every client.</em>
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {BEFORE_AFTER.map((item, i) => (
-              <div key={i} className="grid grid-cols-2 gap-0 border border-border rounded-[13px] overflow-hidden">
-                <div className="p-4 bg-destructive/[0.04] border-r border-border">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-destructive mb-2">Before</p>
-                  <p className="text-[12.5px] text-muted-foreground leading-relaxed italic">{item.before}</p>
-                </div>
-                <div className="p-4 bg-success/[0.04]">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-success mb-2">After</p>
-                  <p className="text-[12.5px] text-foreground leading-relaxed">{item.after}</p>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {PAIN_POINTS.map((p, i) => (
+              <div key={i} className="flex items-start gap-3 p-4 bg-card border border-border rounded-[13px]">
+                <span className="text-lg shrink-0">{p.icon}</span>
+                <p className="text-[13.5px] text-muted-foreground leading-relaxed">{p.text}</p>
               </div>
             ))}
+            {/* Solution teaser */}
+            <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-[13px]">
+              <span className="text-lg shrink-0">✅</span>
+              <p className="text-[13.5px] text-primary font-medium leading-relaxed">Onboardly fixes all of this with one link.</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* ── BEFORE vs AFTER ── */}
+      <section className="py-20 px-6 md:px-10 bg-card border-y border-border">
+        <div className="max-w-[1080px] mx-auto">
+          <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
+            <span className="w-5 h-[1.5px] bg-primary rounded-full" />The difference
+          </div>
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-10 max-w-[560px]">
+            From messy chats to <em className="italic font-normal">a clear plan.</em>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-[760px]">
+            {/* Before */}
+            <div className="border border-destructive/20 rounded-[13px] overflow-hidden">
+              <div className="px-4 py-2.5 bg-destructive/5 border-b border-destructive/15">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-destructive">Before Onboardly</p>
+              </div>
+              <div className="p-4 space-y-3">
+                {["Scattered WhatsApp messages", "Missing requirements until mid-project", "Confusing and shifting project scope"].map((t, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="text-destructive text-xs shrink-0">✕</span>
+                    <span className="text-[13px] text-muted-foreground">{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* After */}
+            <div className="border border-success/20 rounded-[13px] overflow-hidden">
+              <div className="px-4 py-2.5 bg-success/5 border-b border-success/15">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-success">After Onboardly</p>
+              </div>
+              <div className="p-4 space-y-3">
+                {["One structured brief — everything in one place", "Clear sections, goals, and requirements from day one", "Ready-to-build website plan, no interpretation needed"].map((t, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="text-success text-xs shrink-0">✓</span>
+                    <span className="text-[13px] text-foreground">{t}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
       <section id="how-it-works" className="py-24 px-6 md:px-10">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
@@ -327,7 +385,7 @@ export default function Landing() {
             Up and running in <em className="italic font-normal">under 5 minutes.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[480px] mb-12">
-            No complicated setup. No learning curve. Just create a client, send the link, and let Onboardly do the rest.
+            No complicated setup. No learning curve. Just create a client, send the link, and get a structured brief back.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {HOW_IT_WORKS.map((step, i) => (
@@ -344,17 +402,17 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* ── FEATURES ── */}
       <section id="features" className="py-24 px-6 md:px-10 bg-card border-y border-border">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
             <span className="w-5 h-[1.5px] bg-primary rounded-full" />Features
           </div>
           <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-3.5 max-w-[580px]">
-            Everything you need.<br /><em className="italic font-normal">Nothing you don't.</em>
+            Built around what<br /><em className="italic font-normal">actually matters.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[480px] mb-12">
-            Not another project management tool. Just the one thing you need before a project starts.
+            Not another project tool. Just the one thing you need before a project starts.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {FEATURES.map((f) => (
@@ -368,7 +426,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* AFTER SUBMIT */}
+      {/* ── AFTER SUBMIT ── */}
       <section className="py-20 px-6 md:px-10">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
@@ -393,8 +451,35 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" className="py-24 px-6 md:px-10 bg-card border-y border-border">
+      {/* ── TESTIMONIALS ── */}
+      <section id="testimonials" className="py-24 px-6 md:px-10 bg-card border-y border-border">
+        <div className="max-w-[1080px] mx-auto">
+          <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
+            <span className="w-5 h-[1.5px] bg-primary rounded-full" />What they say
+          </div>
+          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-12 max-w-[580px]">
+            Designers who switched to <em className="italic font-normal">Onboardly</em>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="bg-background border border-border rounded-[13px] p-5 hover:shadow-md transition-shadow">
+                <div className="text-xs text-warning mb-2.5 tracking-[2px]">★★★★★</div>
+                <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-4 italic">"{t.text}"</p>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[11px] font-bold text-primary-foreground" style={{ background: t.color }}>{t.init}</div>
+                  <div>
+                    <div className="text-[13px] font-semibold text-foreground">{t.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" className="py-24 px-6 md:px-10">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-center mb-14">
             <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center justify-center gap-2">
@@ -407,7 +492,6 @@ export default function Landing() {
               No pressure. The free plan is genuinely useful. Upgrade only when you need more.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[900px] mx-auto">
             {PLANS.map((plan) => {
               const planKey = plan.name === "Free" ? "free" : plan.name === "Lifetime" ? "lifetime" : "pro";
@@ -415,16 +499,14 @@ export default function Landing() {
               return (
                 <div key={plan.name} className={`relative border rounded-[16px] p-6 flex flex-col transition-all hover:-translate-y-1 hover:shadow-lg ${isCurrent ? "border-primary ring-2 ring-primary/30 bg-primary/[0.06]"
                     : plan.highlight ? "border-primary bg-primary/[0.03] shadow-[0_0_40px_hsl(var(--accent-glow))]"
-                      : "border-border bg-background"
+                      : "border-border bg-card"
                   }`}>
                   {isCurrent && (
-                    <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap">
-                      ✓ Current Plan
-                    </div>
+                    <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-[11px] font-bold px-3 py-1 rounded-full whitespace-nowrap">✓ Current Plan</div>
                   )}
-                  {plan.badge && !isCurrent && (
+                  {(plan as any).badge && !isCurrent && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-success/20 text-success border border-success/30 text-[11px] font-semibold px-3 py-1 rounded-full whitespace-nowrap">
-                      {plan.badge}
+                      {(plan as any).badge}
                     </div>
                   )}
                   <div className="mb-5">
@@ -444,11 +526,10 @@ export default function Landing() {
                   <button
                     onClick={() => handlePlanClick(plan.name)}
                     disabled={isCurrent || upgrading === plan.name}
-                    className={`w-full py-2.5 rounded-lg text-[13px] font-semibold text-center transition-all ${isCurrent ? "bg-primary/10 text-primary cursor-default"
+                    className={`w-full py-2.5 rounded-lg text-[13px] font-semibold text-center transition-all disabled:opacity-70 ${isCurrent ? "bg-primary/10 text-primary cursor-default"
                         : plan.highlight ? "bg-primary text-primary-foreground hover:brightness-110"
                           : "bg-secondary text-foreground border border-border hover:bg-muted"
-                      } disabled:opacity-70`}
-                  >
+                      }`}>
                     {isCurrent ? "Current Plan" : upgrading === plan.name ? "Updating..." : plan.cta}
                   </button>
                 </div>
@@ -458,34 +539,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section id="testimonials" className="py-24 px-6 md:px-10">
-        <div className="max-w-[1080px] mx-auto">
-          <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-primary mb-3.5 flex items-center gap-2">
-            <span className="w-5 h-[1.5px] bg-primary rounded-full" />What they say
-          </div>
-          <h2 className="font-display text-[clamp(28px,4vw,46px)] font-bold leading-tight text-foreground mb-12 max-w-[580px]">
-            Designers who switched to <em className="italic font-normal">Onboardly</em>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-card border border-border rounded-[13px] p-5 hover:shadow-md transition-shadow">
-                <div className="text-xs text-warning mb-2.5 tracking-[2px]">★★★★★</div>
-                <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-4 italic">"{t.text}"</p>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-[34px] h-[34px] rounded-full flex items-center justify-center text-[11px] font-bold text-primary-foreground" style={{ background: t.color }}>{t.init}</div>
-                  <div>
-                    <div className="text-[13px] font-semibold text-foreground">{t.name}</div>
-                    <div className="text-[11px] text-muted-foreground">{t.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
+      {/* ── FINAL CTA ── */}
       <section className="py-24 px-6 md:px-10 text-center bg-card border-t border-border">
         <div className="max-w-[640px] mx-auto">
           <p className="text-[12px] text-muted-foreground mb-6 flex items-center justify-center gap-4 flex-wrap">
@@ -494,10 +548,10 @@ export default function Landing() {
             <span>✓ Setup in under 5 minutes</span>
           </p>
           <h2 className="font-display text-[clamp(30px,5vw,54px)] font-bold leading-[1.1] text-foreground mb-3.5">
-            Your next client deserves a <em className="italic text-primary">better</em> first impression.
+            Generate your first client brief <em className="italic text-primary">in minutes.</em>
           </h2>
           <p className="text-[15px] text-muted-foreground leading-relaxed mb-8">
-            Stop losing time to back-and-forth. Set up Onboardly once and never chase a client for their brief again.
+            Stop wasting time on back-and-forth. Set up once, collect everything you need, start every project with confidence.
           </p>
           <Link to="/auth" className="inline-flex px-8 py-4 rounded-xl text-[15px] font-semibold text-primary-foreground bg-primary shadow-[0_4px_20px_hsl(var(--accent-glow))] hover:brightness-110 transition-all">
             Start Free →
@@ -506,7 +560,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* FOOTER */}
+      {/* ── FOOTER ── */}
       <footer className="px-6 md:px-10 py-6 border-t border-border bg-card flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2.5 text-[13px] text-muted-foreground">
           <img src="/favicon.svg" className="w-8 h-8" alt="Onboardly" />

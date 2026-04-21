@@ -295,22 +295,22 @@ export default function Clients() {
 
         {/* ── STAT CARDS ── */}
         {clients.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <motion.div initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }} className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
-              { icon: <Users size={15} className="text-primary" />, label: "Total", value: totalClients, bg: "bg-primary/5 border-primary/15" },
-              { icon: <ArrowRight size={15} className="text-amber-400" />, label: "Avg Progress", value: `${avgCompletion}%`, bg: "bg-amber-500/5 border-amber-500/15" },
-              { icon: <Clock size={15} className="text-blue-400" />, label: "In Progress", value: inProgressCount, bg: "bg-blue-500/5 border-blue-500/15" },
-              { icon: <CheckCircle size={15} className="text-emerald-400" />, label: "Completed", value: completedCount, bg: "bg-emerald-500/5 border-emerald-500/15" },
+              { icon: <Users size={15} className="text-primary" />, label: "Total", value: totalClients, bg: "bg-primary/5 border-primary/15 hover:bg-primary/10 transition-colors" },
+              { icon: <ArrowRight size={15} className="text-amber-400" />, label: "Avg Progress", value: `${avgCompletion}%`, bg: "bg-amber-500/5 border-amber-500/15 hover:bg-amber-500/10 transition-colors" },
+              { icon: <Clock size={15} className="text-blue-400" />, label: "In Progress", value: inProgressCount, bg: "bg-blue-500/5 border-blue-500/15 hover:bg-blue-500/10 transition-colors" },
+              { icon: <CheckCircle size={15} className="text-emerald-400" />, label: "Completed", value: completedCount, bg: "bg-emerald-500/5 border-emerald-500/15 hover:bg-emerald-500/10 transition-colors" },
             ].map(s => (
-              <div key={s.label} className={`border rounded-2xl p-4 ${s.bg}`}>
+              <motion.div key={s.label} variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }} whileHover={{ y: -2 }} className={`border rounded-2xl p-4 cursor-default ${s.bg}`}>
                 <div className="flex items-center justify-between mb-2.5">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
                   <div className="w-6 h-6 rounded-lg bg-background/40 flex items-center justify-center">{s.icon}</div>
                 </div>
-                <p className="font-display text-[28px] text-foreground leading-none">{s.value}</p>
-              </div>
+                <p className="font-display text-[28px] text-foreground leading-none"><motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} key={s.value as React.Key}>{s.value}</motion.span></p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {/* ── ACTIVITY FEED ── */}
@@ -379,17 +379,21 @@ export default function Clients() {
 
         {/* ── CLIENT CARDS ── */}
         {loading ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+          <motion.div initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }} className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3 w-full max-w-sm">
+              <motion.div key={i} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }} className="bg-surface border border-border rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3.5 w-full">
                   <div className="w-10 h-10 rounded-xl bg-muted-foreground/10 animate-pulse shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-muted-foreground/10 rounded-md w-3/4 animate-pulse" />
-                    <div className="h-3 bg-muted-foreground/10 rounded-md w-1/2 animate-pulse" />
+                  <div className="flex-1 space-y-2 max-w-xs">
+                    <div className="h-3.5 bg-muted-foreground/10 rounded-md w-3/4 animate-pulse" />
+                    <div className="h-2.5 bg-muted-foreground/10 rounded-md w-1/2 animate-pulse" />
+                  </div>
+                  <div className="hidden sm:block w-[120px] space-y-2 shrink-0">
+                    <div className="flex justify-between"><div className="h-2 bg-muted-foreground/10 w-12 rounded" /><div className="h-2 bg-muted-foreground/10 w-6 rounded" /></div>
+                    <div className="h-1.5 bg-muted-foreground/10 rounded-full w-full animate-pulse" />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
         ) : clients.length === 0 ? (
@@ -421,11 +425,14 @@ export default function Clients() {
                 const isCopied = copiedId === client.id;
                 return (
                   <motion.div layout key={client.id}
-                    initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                    className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all">
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)" }}
+                    transition={{ type: "spring", stiffness: 400, damping: 28, delay: i * 0.04 }}
+                    whileHover={{ scale: 1.01, y: -2 }}
+                    whileTap={{ scale: 0.99 }}
+                    className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-[0_8px_30px_hsl(var(--accent-glow))] transition-colors">
 
                     <div className="flex items-center gap-3.5 px-4 py-4 cursor-pointer" onClick={() => setSelectedClient(client)}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shrink-0 shadow-sm"
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shrink-0 shadow-md"
                         style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
                         {INITIALS(client.name)}
                       </div>
